@@ -1,6 +1,6 @@
+# ignore pycache
+__pycache__/
+
 # ignore the provided python shell
 mldata.py
 test_mldata.py
-
-# ignore pycache
-__pycache__/
