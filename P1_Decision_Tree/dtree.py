@@ -16,7 +16,7 @@ def main():
     loader = Loader(file_path)
     X = loader.samples
     y = loader.labels
-    print(y)    
+    print(y)
     #dt = ID3(max_depth, use_gain_ratio)
     #dt.fit(X, y)
 
