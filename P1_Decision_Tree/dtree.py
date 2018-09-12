@@ -18,8 +18,8 @@ def main():
     examples = np.array(mldata.parse_c45(file_path.split(os.sep)[-1], file_path))
     samples = examples[:, 1:-1].astype(float)
     targets = np.array(list(map(lambda x: x == 'True', examples[:, -1])))
-    #dt = ID3(max_depth, use_gain_ratio)
-    #dt.fit(X, y)
+    dt = ID3(max_depth, use_gain_ratio)
+    dt.fit(samples, targets)
 
 if __name__ == '__main__':
     main()

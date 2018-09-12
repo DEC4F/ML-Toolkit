@@ -55,10 +55,35 @@ class ID3(object):
         labels : array-like
             a list of values of labels
         """
+        # TODO: boolean variable that indicates attr is discrete or continuous
+        is_discrete = True
+        if is_discrete:
+            # attr is discrete
+            return self.ig_of_discrete_attr(attr, labels)
+        else:
+            #TODO: partition cont value
+            part_ent = None
+            return None
+
+    def ig_of_discrete_attr(self, attr, labels):
+        """
+        calculates the information gain of input attribute
+        """
         og_ent = self.entropy_of(labels)
-        #TODO: partition cont value
-        part_ent = None
-        return og_ent - part_ent
+        attr_label_pair = np.array(attr, labels).T
+        unique_symbol = np.unique(attr_label_pair[:, 0])
+        best_ig = 0.0
+        for symbol in unique_symbol:
+            sym = np.array([pair for pair in attr_label_pair if pair[0] == symbol])
+            non_sym = np.array([pair for pair in attr_label_pair if pair[0] != symbol])
+            # calculate probability of current symbol
+            p_sym = len(sym) / float(len(attr_label_pair))
+            # calculate entropy of entire attribute using current symbol
+            curr_ent = self.entropy_of(sym[:, 1])*p_sym + self.entropy_of(non_sym[:, 1])*(1-p_sym)
+            curr_ig = og_ent - curr_ent
+            if best_ig < curr_ig:
+                best_ig = curr_ig
+        return best_ig
 
     def entropy_of(self, labels):
         """
@@ -69,6 +94,6 @@ class ID3(object):
         """
         from collections import Counter
         occurence = list(Counter(labels).values())
-        prob = list(map(lambda x: x/np.sum(occurence), occurence))
+        prob = list(map(lambda x: x/float(np.sum(occurence)), occurence))
         entropy = -np.sum(list(map(lambda x: x*np.log2(x), prob)))
         return entropy
