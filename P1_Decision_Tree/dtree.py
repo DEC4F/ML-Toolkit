@@ -15,9 +15,9 @@ def main():
     run the decision tree with param given by user
     """
     file_path, use_full_sample, max_depth, use_gain_ratio = sys.argv[1:5]
-    samples = np.array(mldata.parse_c45(file_path.split(os.sep)[-1], file_path))
-    X = samples[:, 1:-1]
-    y = samples[:, -1]
+    examples = np.array(mldata.parse_c45(file_path.split(os.sep)[-1], file_path))
+    samples = examples[:, 1:-1].astype(float)
+    targets = np.array(list(map(lambda x: x == 'True', examples[:, -1])))
     #dt = ID3(max_depth, use_gain_ratio)
     #dt.fit(X, y)
 
