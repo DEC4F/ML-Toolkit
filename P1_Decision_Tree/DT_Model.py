@@ -85,8 +85,8 @@ class ID3(object):
         unique_symbol = np.unique(attr_label_pair[:, 0])
         best_ig = 0.0
         for symbol in unique_symbol:
-            sym = np.array([pair for pair in attr_label_pair if pair[0] == symbol])
-            non_sym = np.array([pair for pair in attr_label_pair if pair[0] != symbol])
+            sym = attr_label_pair[attr_label_pair[:,0] == symbol]
+            non_sym = attr_label_pair[attr_label_pair[:,0] != symbol]
             # calculate probability of current symbol
             p_sym = len(sym) / float(len(attr_label_pair))
             # calculate entropy of entire attribute using current symbol
