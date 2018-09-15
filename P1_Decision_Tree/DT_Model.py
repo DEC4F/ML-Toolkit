@@ -14,6 +14,9 @@ class ID3(object):
     def __init__(self, max_depth, use_gain_ratio):
         self.max_depth = max_depth
         self.use_gain_ratio = use_gain_ratio
+        # define subtree (should also be ID3)
+        self.positive = None
+        self.negative = None
 
     def fit(self, samples, labels):
         """
@@ -25,7 +28,10 @@ class ID3(object):
             the labels
         """
         # TODO: build tree
-        pass
+        attr_idx, part_value = self.best_attr_of(samples, labels)
+        pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, attr_idx, part_value)
+        self.positive = ID3(this.max_depth - 1, this.use_gain_ratio)
+        # TODO: recursively build tree
 
     def best_attr_of(self, samples, labels):
         """
@@ -37,14 +43,16 @@ class ID3(object):
         best_ig = 0.0
         best_attr_idx = None
         for i, attr in enumerate(samples.T):
-            curr_ig = self.ig_of(sorted(attr), labels)
+            curr_ig, curr_partition = self.ig_of(sorted(attr), labels)
             if  curr_ig > best_ig:
                 best_ig = curr_ig
+                best_partition = curr_partition
                 best_attr_idx = i
-        best_attr = samples[best_attr_idx, :]
+        # get the best attribute column
+        best_attr = samples[:, best_attr_idx]
         # TODO: np delete will delete element in the row when there's only one row left
         truncated_samples = np.delete(samples, best_attr_idx, axis=1)
-        return best_attr, truncated_samples
+        return best_attr_idx, best_partition
 
     def ig_of(self, attr, labels):
         """
@@ -56,22 +64,24 @@ class ID3(object):
             a list of values of labels
         """
         # TODO: boolean variable that indicates attr is discrete or continuous
-        is_discrete = True
+        is_discrete = False
         if is_discrete:
             # attr is discrete
             return self.ig_of_discrete_attr(attr, labels)
         else:
             #TODO: partition cont value
-            part_ent = None
+            #part_ent = None
             return self.ig_of_cont_attr(attr, labels)
             #return None
 
     def ig_of_discrete_attr(self, attr, labels):
         """
         calculates the information gain of input attribute
+        :returns : best_ig, best_symbol
         """
         og_ent = self.entropy_of(labels)
-        attr_label_pair = np.array(attr, labels).T
+        attr_label_pair = np.array([attr, labels]).T
+        # unique_symbol = np.unique(attr)
         unique_symbol = np.unique(attr_label_pair[:, 0])
         best_ig = 0.0
         for symbol in unique_symbol:
@@ -84,7 +94,8 @@ class ID3(object):
             curr_ig = og_ent - curr_ent
             if best_ig < curr_ig:
                 best_ig = curr_ig
-        return best_ig
+                best_symbol = sumbol
+        return best_ig, best_symbol
 
     def ig_of_cont_attr(self, attr, labels):
         """
@@ -92,6 +103,7 @@ class ID3(object):
         ----------
         labels : array-like
             a list of labels
+        :return : best_ig, best_partition
         """
         og_ent = self.entropy_of(labels)
         cont_attr_label_pair = np.array(attr, labels).T
@@ -101,13 +113,16 @@ class ID3(object):
         chng_in_val = np.where(np.roll(sortted_attr_label_pair[:,1],1)!=sortted_attr_label_pair[:,1])[0]
         # chng_in_val :  list of the indexes of the continious attributes where there's a change in the Class Label
         best_ig = 0.0
-        # traverse through all the indexes of the continious attributes where there's a change in the Class Label
+
+        # traverse through all the indexes of the continious attributes where there's a change in the Class Label (The first element should not be considered)
         for i in chng_in_val[1:]:
+            partition = (sortted_attr_label_pair[:,0][i] + sortted_attr_label_pair[:,0][i-1])/2
+
             # attribute list with attribute less than or equal-to the found index-of-change
-            attr_list_with_TRUE = sortted_attr_label_pair[sortted_attr_label_pair[:,0]<= ((sortted_attr_label_pair[:,0][i] + sortted_attr_label_pair[:,0][i-1])/2)]
+            attr_list_with_TRUE = sortted_attr_label_pair[sortted_attr_label_pair[:,0]<= partition]
             
             # attribute list with attribute greater than the found index-of-change
-            attr_list_with_False = sortted_attr_label_pair[sortted_attr_label_pair[:,0] > ((sortted_attr_label_pair[:,0][i] + sortted_attr_label_pair[:,0][i-1])/2)]
+            attr_list_with_False = sortted_attr_label_pair[sortted_attr_label_pair[:,0] > partition]
            
             # probability of attribute list with attribute less than or equal-to the found index-of-change
             probab_with_TRUE = (attr_list_with_TRUE.shape[0])/float(sortted_attr_label_pair.shape[0])
@@ -124,7 +139,8 @@ class ID3(object):
             # Finding the maximum information gain
             if best_ig < ig_cont:
                 best_ig = ig_cont
-            return best_ig
+                best_partition = partition
+            return best_ig, best_partition
         
     def entropy_of(self, labels):
         """
@@ -138,20 +154,62 @@ class ID3(object):
         prob = list(map(lambda x: x/float(np.sum(occurence)), occurence))
         entropy = -np.sum(list(map(lambda x: x*np.log2(x), prob)))
         return entropy
-    def entropy_of_cont(self, labels):
-    """
-    calculates entropy of input labels
-    ----------
-    labels : array-like
-        a list of labels
-    """
-    from collections import Counter
-    occurence = list(Counter(labels[:,0]).values())
-    prob = [x/float(np.sum(occurence)) for x in occurence]
-    boolarr = np.array(labels[:,1], dtype=np.bool)
-    if np.sum(boolarr) ==0:
-        entropy = 0.0
-    else:
-        entropy = -np.sum([x*np.log2(np.sum(boolarr)/float(np.sum(occurence))) for x in prob])
-    return entropy
 
+    def entropy_of_cont(self, labels):
+        """
+        calculates entropy of input labels
+        ----------
+        labels : array-like
+            a list of labels
+        """
+        from collections import Counter
+        occurence = list(Counter(labels[:,0]).values())
+        prob = [x/float(np.sum(occurence)) for x in occurence]
+        boolarr = np.array(labels[:,1], dtype=np.bool)
+        if np.sum(boolarr) ==0:
+            entropy = 0.0
+        else:
+            entropy = -np.sum([x*np.log2(np.sum(boolarr)/float(np.sum(occurence))) for x in prob])
+        return entropy
+
+    def gr_of(self, attr, labels):
+        """
+        :param attr: array-like
+            a sorted list of values of a single attribute
+        :param labels: array-like
+            a list of values of labels
+        :return:
+        """
+        information_gain = this.ig_of(attr, labels)
+        entropy = this.entropy_of(attr)
+        gain_ratio = information_gain / entropy
+
+        return gain_ratio
+
+    def partition(self, samples, labels, attr_idx, part_value):
+        """
+
+        :param samples:
+        :param attr_idx:
+        :param part_value:
+        :return: positive subsamples, negative subsamples
+        """
+        is_discrete = False
+
+        # get the indexs of samples which are positive according to the partition
+        if is_discrete :
+            index = np.where(samples[:, attr_idx] == part_value)[0]
+        else:
+            index = np.where(samples[:, attr_idx] <= part_value)[0]
+
+        # get the to subset of samples by positiveness and negativeness
+        positive_samples = samples[index]
+        negative_samples = np.delete(samples, index, axis=0)
+        pos_labels = labels[index]
+        neg_labels = np.delete(labels, index, axis=0)
+
+        # delete the partition attribute
+        pos_subs = np.delete(positive_samples, attr_idx, axis=1)
+        neg_subs = np.delete(negative_samples, attr_idx, axis=1)
+
+        return pos_subs, neg_subs, pos_labels, neg_labels
