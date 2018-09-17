@@ -10,4 +10,4 @@ This is an implementation of ID3 decision tree algorithm for EECS 440 taught by 
 ## Usage
 
 ```shell
-python3 dtree.py folder_path use_full_sample max_depth use_gain_ratio```
+python3 dtree.py folder_path use_full_sample max_depth use_gain_ratio
