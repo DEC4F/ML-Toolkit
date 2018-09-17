@@ -75,8 +75,8 @@ class ID3(object):
         unique_symbol = np.unique(attr_label_pair[:, 0])
         best_ig = 0.0
         for symbol in unique_symbol:
-            sym = attr_label_pair[attr_label_pair[:,0] == symbol]
-            non_sym = attr_label_pair[attr_label_pair[:,0] != symbol]
+            sym = attr_label_pair[attr_label_pair[:, 0] == symbol]
+            non_sym = attr_label_pair[attr_label_pair[:, 0] != symbol]
             # calculate probability of current symbol
             p_sym = len(sym) / float(len(attr_label_pair))
             # calculate entropy of entire attribute using current symbol
@@ -95,7 +95,7 @@ class ID3(object):
         """
         og_ent = self.entropy_of(labels)
         cont_attr_label_pair = np.array(attr, labels).T
-        # -2 : I took an example where second last column is for the continuous attribute                                                           
+        # -2 : I took an example where second last column is for the continuous attribute
         sortted_attr_label_pair = cont_attr_label_pair[cont_attr_label_pair[:,0].argsort(kind='mergesort')]
         # Sort the continuous attribute label based in the ascending order
         chng_in_val = np.where(np.roll(sortted_attr_label_pair[:,1],1)!=sortted_attr_label_pair[:,1])[0]
@@ -105,27 +105,27 @@ class ID3(object):
         for i in chng_in_val[1:]:
             # attribute list with attribute less than or equal-to the found index-of-change
             attr_list_with_TRUE = sortted_attr_label_pair[sortted_attr_label_pair[:,0]<= ((sortted_attr_label_pair[:,0][i] + sortted_attr_label_pair[:,0][i-1])/2)]
-            
+
             # attribute list with attribute greater than the found index-of-change
             attr_list_with_False = sortted_attr_label_pair[sortted_attr_label_pair[:,0] > ((sortted_attr_label_pair[:,0][i] + sortted_attr_label_pair[:,0][i-1])/2)]
-           
+
             # probability of attribute list with attribute less than or equal-to the found index-of-change
             probab_with_TRUE = (attr_list_with_TRUE.shape[0])/float(sortted_attr_label_pair.shape[0])
 
             # probability of attribute list with attribute greater than the found index-of-change
             probab_with_False = (attr_list_with_False.shape[0])/float(sortted_attr_label_pair.shape[0])
-            
+
             # As H(Y|X) = P(X=TRUE)H(Y|X=TRUE) + P(X=FALSE)H(Y|X=FALSE)
-            curr_et = probab_with_TRUE*entropy_of_cont(attr_list_with_TRUE) + probab_with_False*entropy_of_cont(attr_list_with_False)
-            
+            curr_et = probab_with_TRUE * self.entropy_of_cont(attr_list_with_TRUE) + probab_with_False * self.entropy_of_cont(attr_list_with_False)
+
             #IG = H(Y) - H(Y|X)
             ig_cont = og_ent - curr_et
-            
+
             # Finding the maximum information gain
             if best_ig < ig_cont:
                 best_ig = ig_cont
             return best_ig
-        
+
     def entropy_of(self, labels):
         """
         calculates entropy of input labels
@@ -138,20 +138,20 @@ class ID3(object):
         prob = list(map(lambda x: x/float(np.sum(occurence)), occurence))
         entropy = -np.sum(list(map(lambda x: x*np.log2(x), prob)))
         return entropy
-    def entropy_of_cont(self, labels):
-    """
-    calculates entropy of input labels
-    ----------
-    labels : array-like
-        a list of labels
-    """
-    from collections import Counter
-    occurence = list(Counter(labels[:,0]).values())
-    prob = [x/float(np.sum(occurence)) for x in occurence]
-    boolarr = np.array(labels[:,1], dtype=np.bool)
-    if np.sum(boolarr) ==0:
-        entropy = 0.0
-    else:
-        entropy = -np.sum([x*np.log2(np.sum(boolarr)/float(np.sum(occurence))) for x in prob])
-    return entropy
 
+    def entropy_of_cont(self, labels):
+        """
+        calculates entropy of input labels
+        ----------
+        labels : array-like
+            a list of labels
+        """
+        from collections import Counter
+        occurence = list(Counter(labels[:, 0]).values())
+        prob = [x/float(np.sum(occurence)) for x in occurence]
+        boolarr = np.array(labels[:, 1], dtype=np.bool)
+        if np.sum(boolarr) == 0:
+            entropy = 0.0
+        else:
+            entropy = -np.sum([x*np.log2(np.sum(boolarr)/float(np.sum(occurence))) for x in prob])
+            return entropy
