@@ -77,15 +77,14 @@ class ID3(object):
         :returns : best_ig, best_symbol
         """
         og_ent = self.entropy_of(labels)
-        attr_label_pair = np.array([attr, labels]).T
-        # unique_symbol = np.unique(attr)
-        unique_symbol = np.unique(attr_label_pair[:, 0])
+        xy_pair = np.array([attr, labels]).T
+        unique_symbol = np.unique(xy_pair[:, 0])
         best_ig = 0.0
         for symbol in unique_symbol:
-            sym = attr_label_pair[attr_label_pair[:, 0] == symbol]
-            non_sym = attr_label_pair[attr_label_pair[:, 0] != symbol]
+            sym = xy_pair[xy_pair[:, 0] == symbol]
+            non_sym = xy_pair[xy_pair[:, 0] != symbol]
             # calculate probability of current symbol
-            p_sym = len(sym) / float(len(attr_label_pair))
+            p_sym = len(sym) / float(len(xy_pair))
             # calculate entropy of entire attribute using current symbol
             curr_ent = self.entropy_of(sym[:, 1])*p_sym + self.entropy_of(non_sym[:, 1])*(1-p_sym)
             curr_ig = og_ent - curr_ent
@@ -103,41 +102,27 @@ class ID3(object):
         :return : best_ig, best_partition
         """
         og_ent = self.entropy_of(labels)
-        cont_attr_label_pair = np.array(attr, labels).T
-        # -2 : I took an example where second last column is for the continuous attribute
-        sortted_attr_label_pair = cont_attr_label_pair[cont_attr_label_pair[:,0].argsort(kind='mergesort')]
-        # Sort the continuous attribute label based in the ascending order
-        chng_in_val = np.where(np.roll(sortted_attr_label_pair[:,1],1)!=sortted_attr_label_pair[:,1])[0]
-        # chng_in_val :  list of the indexes of the continious attributes where there's a change in the Class Label
-        best_ig = 0.0
-
-        # traverse through all the indexes of the continious attributes where there's a change in the Class Label (The first element should not be considered)
-        for i in chng_in_val[1:]:
-            partition = (sortted_attr_label_pair[:,0][i] + sortted_attr_label_pair[:,0][i-1])/2
-
-            # attribute list with attribute less than or equal-to the found index-of-change
-            attr_list_with_TRUE = sortted_attr_label_pair[sortted_attr_label_pair[:,0]<= partition]
-
-            # attribute list with attribute greater than the found index-of-change
-            attr_list_with_False = sortted_attr_label_pair[sortted_attr_label_pair[:,0] > partition]
-
-            # probability of attribute list with attribute less than or equal-to the found index-of-change
-            probab_with_TRUE = (attr_list_with_TRUE.shape[0])/float(sortted_attr_label_pair.shape[0])
-
-            # probability of attribute list with attribute greater than the found index-of-change
-            probab_with_False = (attr_list_with_False.shape[0])/float(sortted_attr_label_pair.shape[0])
-
-            # As H(Y|X) = P(X=TRUE)H(Y|X=TRUE) + P(X=FALSE)H(Y|X=FALSE)
-            curr_et = probab_with_TRUE * self.entropy_of_cont(attr_list_with_TRUE) + probab_with_False * self.entropy_of_cont(attr_list_with_False)
-
-            #IG = H(Y) - H(Y|X)
-            ig_cont = og_ent - curr_et
-
+        cont_xy_pair = np.array([attr, labels]).T
+        # Sort the attribute label ascendingly
+        sorted_xy_pair = cont_xy_pair[cont_xy_pair[:, 0].argsort(kind='mergesort')]
+        # list of the indexes of samples where class label changed
+        changed_idx = np.where(sorted_xy_pair[:, 1] != np.roll(sorted_xy_pair[:, 1], 1))[0]
+        best_ig = -100.0
+        for i in changed_idx[1:]:
+            # partition list into 2 branches
+            curr_partition = (sorted_xy_pair[:, 0][i] + sorted_xy_pair[:, 0][i-1])/2
+            left_branch = sorted_xy_pair[sorted_xy_pair[:, 0] <= curr_partition]
+            right_branch = sorted_xy_pair[sorted_xy_pair[:, 0] > curr_partition]
+            # calculate information gain of current split
+            p_left = (left_branch.shape[0])/float(sorted_xy_pair.shape[0])
+            p_right = (right_branch.shape[0])/float(sorted_xy_pair.shape[0])
+            curr_ent = p_left * self.entropy_of(left_branch[:,1]) + p_right * self.entropy_of(right_branch[:,1])
+            curr_ig = og_ent - curr_ent
             # Finding the maximum information gain
-            if best_ig < ig_cont:
-                best_ig = ig_cont
-                best_partition = partition
-            return best_ig, best_partition
+            if best_ig < curr_ig:
+                best_ig = curr_ig
+                best_partition = curr_partition
+        return best_ig, best_partition
 
     def entropy_of(self, labels):
         """
@@ -152,35 +137,18 @@ class ID3(object):
         entropy = -np.sum(list(map(lambda x: x*np.log2(x), prob)))
         return entropy
 
-    def entropy_of_cont(self, labels):
-        """
-        calculates entropy of input labels
-        ----------
-        labels : array-like
-            a list of labels
-        """
-        from collections import Counter
-        occurence = list(Counter(labels[:, 0]).values())
-        prob = [x/float(np.sum(occurence)) for x in occurence]
-        boolarr = np.array(labels[:, 1], dtype=np.bool)
-        if np.sum(boolarr) == 0:
-            entropy = 0.0
-        else:
-            entropy = -np.sum([x*np.log2(np.sum(boolarr)/float(np.sum(occurence))) for x in prob])
-        return entropy
-
     def gr_of(self, attr, labels):
         """
-        :param attr: array-like
+        calculates the gain ratio of input attribute
+        ----------
+        attr : array-like
             a sorted list of values of a single attribute
-        :param labels: array-like
+        labels : array-like
             a list of values of labels
-        :return:
         """
         information_gain = self.ig_of(attr, labels)
         entropy = self.entropy_of(attr)
-        gain_ratio = information_gain / entropy
-
+        gain_ratio = information_gain / float(entropy)
         return gain_ratio
 
     def partition(self, samples, labels, attr_idx, part_value):
