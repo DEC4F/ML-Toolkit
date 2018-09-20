@@ -66,13 +66,11 @@ class ID3(object):
         labels : array-like
             a list of values of labels
         """
-        # TODO: boolean variable that indicates attr is discrete or continuous
-        is_discrete = False
-        if is_discrete:
-            # attr is discrete
-            return self.ig_of_discrete_attr(attr, labels)
-        #TODO: partition cont value
-        return self.ig_of_cont_attr(attr, labels)
+        if isinstance(attr[0], float):
+            # attr is continuous
+            return self.ig_of_cont_attr(attr, labels)
+        # attr is discrete or boolean
+        return self.ig_of_discrete_attr(attr, labels)
 
     def ig_of_discrete_attr(self, attr, labels):
         """
@@ -119,7 +117,7 @@ class ID3(object):
             # calculate information gain of current split
             p_left = (left_branch.shape[0])/float(sorted_xy_pair.shape[0])
             p_right = (right_branch.shape[0])/float(sorted_xy_pair.shape[0])
-            curr_ent = p_left * self.entropy_of(left_branch[:,1]) + p_right * self.entropy_of(right_branch[:,1])
+            curr_ent = p_left*self.entropy_of(left_branch[:, 1]) + p_right*self.entropy_of(right_branch[:, 1])
             curr_ig = og_ent - curr_ent
             # Finding the maximum information gain
             if best_ig < curr_ig:
