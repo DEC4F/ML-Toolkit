@@ -171,8 +171,8 @@ class ID3(object):
             index = np.where(samples[:, attr_idx] <= part_value)[0]
 
         # get the to subset of samples by positiveness and negativeness
-        positive_samples = samples[index]
-        negative_samples = np.delete(samples, index, axis=0)
+        pos_subs = samples[index]
+        neg_subs = np.delete(samples, index, axis=0)
         pos_labels = labels[index]
         neg_labels = np.delete(labels, index, axis=0)
 
