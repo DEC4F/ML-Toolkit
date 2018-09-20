@@ -5,3 +5,9 @@
 # ignore the provided python shell
 */mldata.py
 */test_mldata.py
+
+# ignore .DS_Store
+*.DS_Store
+
+# ignore jupyter notebook file
+*/.ipynb
