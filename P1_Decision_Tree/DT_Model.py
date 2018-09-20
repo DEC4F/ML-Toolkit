@@ -31,7 +31,10 @@ class ID3(object):
         attr_idx, part_value = self.best_attr_of(samples, labels)
         pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, labels, attr_idx, part_value)
         self.positive = ID3(self.max_depth - 1, self.use_gain_ratio)
-        # TODO: recursively build tree
+        self.negative = ID3(self.max_depth - 1, self.use_gain_ratio)
+        # recursively build tree
+        self.positive.fit(pos_subs, pos_labels)
+        self.negative.fit(neg_subs, neg_labels)
 
     def best_attr_of(self, samples, labels):
         """
@@ -204,9 +207,5 @@ class ID3(object):
         negative_samples = np.delete(samples, index, axis=0)
         pos_labels = labels[index]
         neg_labels = np.delete(labels, index, axis=0)
-
-        # delete the partition attribute
-        pos_subs = np.delete(positive_samples, attr_idx, axis=1)
-        neg_subs = np.delete(negative_samples, attr_idx, axis=1)
 
         return pos_subs, neg_subs, pos_labels, neg_labels
