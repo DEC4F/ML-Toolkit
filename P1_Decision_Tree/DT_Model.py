@@ -6,6 +6,8 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 
 import numpy as np
 
+remove_attribute = True
+
 class ID3(object):
     """
     a ID3 decision tree
@@ -17,6 +19,8 @@ class ID3(object):
         # define subtree (should also be ID3)
         self.positive = None
         self.negative = None
+        # define label (partition attribute index & value for internal nodes / actual label for leaf nodes)
+        self.label = None
 
     def fit(self, samples, labels):
         """
@@ -26,15 +30,32 @@ class ID3(object):
             the samples
         labels : array-like
             the labels
+        return : whether or not self is a leaf node
         """
         # TODO: build tree
+        # max depth reached / pure / no attributes
+        if self.max_depth == 0 or self.entropy_of(labels) == 0 or len(samples[0]) == 0:
+            # create a leaf node with major label
+            self.label = self.major_label(labels)
+
+            return True
+
+        # build subtrees
         attr_idx, part_value = self.best_attr_of(samples, labels)
+        # record partition attribute index & value
+        self.label = np.array([attr_idx, part_value])
+        # partition the samples and labels
         pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, labels, attr_idx, part_value)
+
+        # create two new ID3 Object as subtrees
         self.positive = ID3(self.max_depth - 1, self.use_gain_ratio)
         self.negative = ID3(self.max_depth - 1, self.use_gain_ratio)
+
         # recursively build tree
         self.positive.fit(pos_subs, pos_labels)
         self.negative.fit(neg_subs, neg_labels)
+
+        return False
 
     def best_attr_of(self, samples, labels):
         """
@@ -176,4 +197,20 @@ class ID3(object):
         pos_labels = labels[index]
         neg_labels = np.delete(labels, index, axis=0)
 
+        # remove attribute
+        if remove_attribute:
+            pos_subs = np.delete(pos_subs, attr_idx, axis=1)
+            neg_subs = np.delete(neg_subs, attr_idx, axis=1)
+
         return pos_subs, neg_subs, pos_labels, neg_labels
+
+    def major_label(self, labels):
+        # TODO: return the majority label among labels
+        from collections import Counters
+        keys = list(Counters(labels).keys())
+        counts = list(Counters(labels).values())
+
+        if counts[0] > counts[1]:
+            return keys[0]
+        else:
+            return keys[1]
