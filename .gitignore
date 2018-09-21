@@ -10,4 +10,5 @@
 *.DS_Store
 
 # ignore jupyter notebook file
-*/.ipynb
+*.ipynb
+*/.ipynb_checkpoints

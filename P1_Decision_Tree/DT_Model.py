@@ -37,7 +37,6 @@ class ID3(object):
         if self.max_depth == 0 or self.entropy_of(labels) == 0 or len(samples[0]) == 0:
             # create a leaf node with major label
             self.label = self.major_label(labels)
-
             return True
 
         # build subtrees
@@ -57,6 +56,16 @@ class ID3(object):
 
         return False
 
+    def predict(self, samples):
+        """
+        predict the samples' class labels
+        ----------
+        samples : array-like
+            the sample data
+        """
+        # TODO: implement predict func
+        pass
+
     def best_attr_of(self, samples, labels):
         """
         select the best attribute (give max information gain if chosen) from the input samples
@@ -74,7 +83,6 @@ class ID3(object):
                 best_attr_idx = i
         # get the best attribute column
         best_attr = samples[:, best_attr_idx]
-        # TODO: np delete will delete element in the row when there's only one row left
         truncated_samples = np.delete(samples, best_attr_idx, axis=1)
         return best_attr_idx, best_partition
 
@@ -204,11 +212,10 @@ class ID3(object):
 
     def major_label(self, labels):
         # TODO: return the majority label among labels
-        from collections import Counters
-        keys = list(Counters(labels).keys())
-        counts = list(Counters(labels).values())
+        from collections import Counter
+        keys = list(Counter(labels).keys())
+        counts = list(Counter(labels).values())
 
         if counts[0] > counts[1]:
             return keys[0]
-        else:
-            return keys[1]
+        return keys[1]
