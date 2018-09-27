@@ -41,6 +41,7 @@ class ID3(object):
 
         # build subtrees
         attr_idx, part_value = self.best_attr_of(samples, labels)
+        #print part_value
         # record partition attribute index & value
         self.label = np.array([attr_idx, part_value])
         # partition the samples and labels
@@ -54,7 +55,7 @@ class ID3(object):
         self.positive.fit(pos_subs, pos_labels)
         self.negative.fit(neg_subs, neg_labels)
 
-        return False
+        return True
 
     def predict(self, samples):
         """
@@ -189,10 +190,11 @@ class ID3(object):
         is_discrete = False
 
         # get the indexs of samples which are positive according to the partition
-        if is_discrete:
-            index = np.where(samples[:, attr_idx] == part_value)[0]
-        else:
+        if isinstance(samples[:, attr_idx][0], float):
             index = np.where(samples[:, attr_idx] <= part_value)[0]
+        else:
+            is_discrete = True
+            index = np.where(samples[:, attr_idx] == part_value)[0]
 
         # get the to subset of samples by positiveness and negativeness
         pos_subs = samples[index]
