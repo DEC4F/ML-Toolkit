@@ -76,14 +76,11 @@ class ID3(object):
         best_ig = 0.0
         best_attr_idx = None
         for i, attr in enumerate(samples.T):
-            curr_ig, curr_partition = self.ig_of(sorted(attr), labels)
+            curr_ig, curr_partition = self.ig_of(attr, labels)
             if  curr_ig > best_ig:
                 best_ig = curr_ig
                 best_partition = curr_partition
                 best_attr_idx = i
-        # get the best attribute column
-        best_attr = samples[:, best_attr_idx]
-        truncated_samples = np.delete(samples, best_attr_idx, axis=1)
         return best_attr_idx, best_partition
 
     def ig_of(self, attr, labels):
