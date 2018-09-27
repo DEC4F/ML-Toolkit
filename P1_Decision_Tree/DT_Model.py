@@ -7,7 +7,7 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 import numpy as np
 from treelib import Node, Tree
 
-remove_attribute = True
+REMOVE_ATTRIBUTE = True
 
 class ID3(object):
     """
@@ -17,9 +17,6 @@ class ID3(object):
     def __init__(self, max_depth, use_gain_ratio):
         self.max_depth = max_depth
         self.use_gain_ratio = use_gain_ratio
-        # define subtree (should also be ID3)
-        self.positive = None
-        self.negative = None
         self.tree = Tree()
 
     def fit(self, samples, labels):
@@ -34,7 +31,7 @@ class ID3(object):
         """
         # base case: max depth reached / pure node / run out of attributes
         if self.max_depth == 0 or self.entropy_of(labels) == 0 or not samples[0]:
-            # create a leaf node with major label
+            # create a leaf node with major label, tag=-1 indicates leaf node
             return self.tree.create_node(-1, self.major_label(labels))
 
         # recursive case: build subtrees
@@ -45,11 +42,11 @@ class ID3(object):
         pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, labels, attr_idx, part_value)
 
         # create two new ID3 Object as subtrees
-        self.positive = ID3(self.max_depth - 1, self.use_gain_ratio)
-        self.negative = ID3(self.max_depth - 1, self.use_gain_ratio)
+        pos_subtree = ID3(self.max_depth - 1, self.use_gain_ratio)
+        neg_subtree = ID3(self.max_depth - 1, self.use_gain_ratio)
         # recursively build tree
-        self.tree.paste(part_value, self.positive.fit(pos_subs, pos_labels))
-        self.tree.paste(part_value, self.negative.fit(neg_subs, neg_labels))
+        self.tree.paste(part_value, pos_subtree.fit(pos_subs, pos_labels))
+        self.tree.paste(part_value, neg_subtree.fit(neg_subs, neg_labels))
 
         return self.tree
 
@@ -197,14 +194,14 @@ class ID3(object):
         pos_labels = labels[index]
         neg_labels = np.delete(labels, index, axis=0)
         # remove attribute
-        if remove_attribute:
+        if REMOVE_ATTRIBUTE:
             pos_subs = np.delete(pos_subs, attr_idx, axis=1)
             neg_subs = np.delete(neg_subs, attr_idx, axis=1)
 
         return pos_subs, neg_subs, pos_labels, neg_labels
 
     def major_label(self, labels):
-        # TODO: return the majority label among labels
+        # TODO: fix empty label issue
         from collections import Counter
         keys = list(Counter(labels).keys())
         counts = list(Counter(labels).values())
