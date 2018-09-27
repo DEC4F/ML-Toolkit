@@ -5,6 +5,7 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
 import numpy as np
+from treelib import Node, Tree
 
 remove_attribute = True
 
@@ -19,8 +20,7 @@ class ID3(object):
         # define subtree (should also be ID3)
         self.positive = None
         self.negative = None
-        # define label (partition attribute index & value for internal nodes / actual label for leaf nodes)
-        self.label = None
+        self.tree = Tree()
 
     def fit(self, samples, labels):
         """
@@ -32,30 +32,26 @@ class ID3(object):
             the labels
         return : whether or not self is a leaf node
         """
-        # TODO: build tree
-        # max depth reached / pure / no attributes
-        if self.max_depth == 0 or self.entropy_of(labels) == 0 or len(samples[0]) == 0:
+        # base case: max depth reached / pure node / run out of attributes
+        if self.max_depth == 0 or self.entropy_of(labels) == 0 or not samples[0]:
             # create a leaf node with major label
-            self.label = self.major_label(labels)
-            return True
+            return self.tree.create_node(-1, self.major_label(labels))
 
-        # build subtrees
+        # recursive case: build subtrees
         attr_idx, part_value = self.best_attr_of(samples, labels)
-        #print part_value
         # record partition attribute index & value
-        self.label = np.array([attr_idx, part_value])
+        self.tree.create_node(attr_idx, part_value)
         # partition the samples and labels
         pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, labels, attr_idx, part_value)
 
         # create two new ID3 Object as subtrees
         self.positive = ID3(self.max_depth - 1, self.use_gain_ratio)
         self.negative = ID3(self.max_depth - 1, self.use_gain_ratio)
-
         # recursively build tree
-        self.positive.fit(pos_subs, pos_labels)
-        self.negative.fit(neg_subs, neg_labels)
+        self.tree.paste(part_value, self.positive.fit(pos_subs, pos_labels))
+        self.tree.paste(part_value, self.negative.fit(neg_subs, neg_labels))
 
-        return True
+        return self.tree
 
     def predict(self, samples):
         """
@@ -74,6 +70,7 @@ class ID3(object):
         samples : array-like
             the sample data
         """
+        # TODO: add if use_gr, then use gr_of()
         best_ig = 0.0
         best_attr_idx = None
         for i, attr in enumerate(samples.T):
@@ -187,13 +184,11 @@ class ID3(object):
         :param part_value:
         :return: positive subsamples, negative subsamples
         """
-        is_discrete = False
 
         # get the indexs of samples which are positive according to the partition
-        if isinstance(samples[:, attr_idx][0], float):
+        if isinstance(samples[0, attr_idx], float):
             index = np.where(samples[:, attr_idx] <= part_value)[0]
         else:
-            is_discrete = True
             index = np.where(samples[:, attr_idx] == part_value)[0]
 
         # get the to subset of samples by positiveness and negativeness
@@ -201,7 +196,6 @@ class ID3(object):
         neg_subs = np.delete(samples, index, axis=0)
         pos_labels = labels[index]
         neg_labels = np.delete(labels, index, axis=0)
-
         # remove attribute
         if remove_attribute:
             pos_subs = np.delete(pos_subs, attr_idx, axis=1)
