@@ -192,10 +192,11 @@ class ID3(object):
         is_discrete = False
 
         # get the indexs of samples which are positive according to the partition
-        if is_discrete:
-            index = np.where(samples[:, attr_idx] == part_value)[0]
-        else:
+        if isinstance(samples[:, attr_idx][0], float):
             index = np.where(samples[:, attr_idx] <= part_value)[0]
+        else:
+            is_discrete = True
+            index = np.where(samples[:, attr_idx] == part_value)[0]
 
         # get the to subset of samples by positiveness and negativeness
         pos_subs = samples[index]
