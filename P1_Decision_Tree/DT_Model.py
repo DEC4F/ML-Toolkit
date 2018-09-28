@@ -8,6 +8,8 @@ import numpy as np
 from treelib import Node, Tree
 
 REMOVE_ATTRIBUTE = True
+dpth = -1
+uq_lb = []
 
 class ID3(object):
     """
@@ -204,13 +206,19 @@ class ID3(object):
             neg_subs = np.delete(neg_subs, attr_idx, axis=1)
 
         return pos_subs, neg_subs, pos_labels, neg_labels
-
     def major_label(self, labels):
-        # TODO: fix empty label issue
-        from collections import Counter
-        keys = list(Counter(labels).keys())
-        counts = list(Counter(labels).values())
+        labels_dict = {}
+        for key in uq_lb:
+            labels_dict[key] = list(labels).count(key)
+        print labels_dict
+        return max(labels_dict, key=labels_dict.get)
 
-        if counts[0] > counts[1]:
-            return keys[0]
-        return keys[1]
+    # def major_label(self, labels):
+    #     # TODO: fix empty label issue
+    #     from collections import Counter
+    #     keys = list(Counter(labels).keys())
+    #     counts = list(Counter(labels).values())
+
+    #     if counts[0] > counts[1]:
+    #         return keys[0]
+    #     return keys[1]

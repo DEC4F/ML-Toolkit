@@ -12,3 +12,5 @@
 # ignore jupyter notebook file
 *.ipynb
 */.ipynb_checkpoints
+# ignore .idea pycharm files
+*.idea
