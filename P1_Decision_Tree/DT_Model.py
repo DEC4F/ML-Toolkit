@@ -19,8 +19,8 @@ class ID3(object):
         self.max_depth = max_depth
         self.use_gain_ratio = use_gain_ratio
         # ID3
-        self.pos_branch = ID3(self.max_depth - 1, self.use_gain_ratio)
-        self.neg_branch = ID3(self.max_depth - 1, self.use_gain_ratio)
+        self.pos_branch = None
+        self.neg_branch = None
 
         self.attr_idx = None
         self.part_val = None
@@ -46,6 +46,10 @@ class ID3(object):
         self.attr_idx, self.part_val = self.best_attr_of(samples, labels)
         # partition the samples and labels
         pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, labels, self.attr_idx, self.part_val)
+
+        # init two branches
+        self.pos_branch = ID3(self.max_depth - 1, self.use_gain_ratio)
+        self.neg_branch = ID3(self.max_depth - 1, self.use_gain_ratio)
 
         # recursively build tree
         self.pos_branch.fit(pos_subs, pos_labels)
@@ -84,7 +88,7 @@ class ID3(object):
         best_attr_idx = None
         for i, attr in enumerate(samples.T):
             curr_ig, curr_partition = self.ig_of(attr, labels)
-            if  curr_ig > best_ig:
+            if best_ig <= curr_ig:
                 best_ig = curr_ig
                 best_partition = curr_partition
                 best_attr_idx = i
@@ -122,7 +126,7 @@ class ID3(object):
             # calculate entropy of entire attribute using current symbol
             curr_ent = self.entropy_of(sym[:, 1])*p_sym + self.entropy_of(non_sym[:, 1])*(1-p_sym)
             curr_ig = og_ent - curr_ent
-            if best_ig < curr_ig:
+            if best_ig <= curr_ig:
                 best_ig = curr_ig
                 best_symbol = symbol
         return best_ig, best_symbol
@@ -153,7 +157,7 @@ class ID3(object):
             curr_ent = p_left*self.entropy_of(left_branch[:, 1]) + p_right*self.entropy_of(right_branch[:, 1])
             curr_ig = og_ent - curr_ent
             # Finding the maximum information gain
-            if best_ig < curr_ig:
+            if best_ig <= curr_ig:
                 best_ig = curr_ig
                 best_partition = curr_partition
         return best_ig, best_partition
