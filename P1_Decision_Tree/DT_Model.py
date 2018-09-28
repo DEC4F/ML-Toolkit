@@ -18,7 +18,12 @@ class ID3(object):
     def __init__(self, max_depth, use_gain_ratio):
         self.max_depth = max_depth
         self.use_gain_ratio = use_gain_ratio
-        self.tree = Tree()
+        # ID3
+        self.pos_branch = ID3(self.max_depth - 1, self.use_gain_ratio)
+        self.neg_branch = ID3(self.max_depth - 1, self.use_gain_ratio)
+
+        self.attr_idx = None
+        self.part_val = None
 
     def fit(self, samples, labels):
         """
@@ -33,25 +38,20 @@ class ID3(object):
         # base case: max depth reached / pure node / run out of attributes
         if self.max_depth == 0 or self.entropy_of(labels) == 0 or np.size(samples, 1) == 0:
             # create a leaf node with major label, id=-1 indicates leaf node
-            return self.tree.create_node(identifier=-1, data=self.major_label(labels))
+            self.attr_idx = -1
+            self.part_val = self.major_label(labels)
+            return
 
         # recursive case: build subtrees
-        attr_idx, part_value = self.best_attr_of(samples, labels)
-        # record partition attribute index & value
-        self.tree.create_node(identifier=attr_idx, data=part_value)
+        self.attr_idx, self.part_val = self.best_attr_of(samples, labels)
         # partition the samples and labels
-        pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, labels, attr_idx, part_value)
+        pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, labels, self.attr_idx, self.part_val)
 
-        # create two new ID3 Object as subtrees
-        pos_subtree = ID3(self.max_depth - 1, self.use_gain_ratio)
-        neg_subtree = ID3(self.max_depth - 1, self.use_gain_ratio)
         # recursively build tree
-        self.tree.paste(nid=attr_idx, new_tree=pos_subtree.fit(pos_subs, pos_labels))
-        self.tree.paste(nid=attr_idx, new_tree=neg_subtree.fit(neg_subs, neg_labels))
+        self.pos_branch.fit(pos_subs, pos_labels)
+        self.neg_branch.fit(neg_subs, neg_labels)
 
-        return self.tree
-
-    def predict(self, samples):
+    def predict(self, x):
         """
         predict the samples' class labels
         ----------
@@ -59,7 +59,18 @@ class ID3(object):
             the sample data
         """
         # TODO: implement predict func
-        pass
+        # self is leaf node
+        if self.attr_idx == -1:
+            return self.part_val
+
+        attr = x[self.attr_idx]
+        if isinstance(attr, float):
+            if attr <= self.part_val:
+                return self.pos_branch.predict(np.delete(x, self.attr_idx))
+            return self.neg_branch.predict(np.delete(x, self.attr_idx))
+        if attr == self.part_val:
+            return self.pos_branch.predict(np.delete(x, self.attr_idx))
+        return self.neg_branch.predict(np.delete(x, self.attr_idx))
 
     def best_attr_of(self, samples, labels):
         """
