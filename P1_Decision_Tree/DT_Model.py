@@ -5,7 +5,6 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
 import numpy as np
-from treelib import Node, Tree
 from collections import Counter
 
 REMOVE_ATTRIBUTE = True
@@ -44,6 +43,12 @@ class ID3(object):
 
         # recursive case: build subtrees
         self.attr_idx, self.part_val = self.best_attr_of(samples, labels)
+
+        # IG == 0
+        if self.attr_idx == -1:
+            self.part_val = self.major_label(labels)
+            return
+
         # partition the samples and labels
         pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, labels, self.attr_idx, self.part_val)
 
@@ -92,6 +97,10 @@ class ID3(object):
                 best_ig = curr_ig
                 best_partition = curr_partition
                 best_attr_idx = i
+
+        if best_ig == 0.0:
+            best_attr_idx = -1
+            
         return best_attr_idx, best_partition
 
     def ig_of(self, attr, labels):
