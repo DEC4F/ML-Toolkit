@@ -30,14 +30,14 @@ class ID3(object):
         return : whether or not self is a leaf node
         """
         # base case: max depth reached / pure node / run out of attributes
-        if self.max_depth == 0 or self.entropy_of(labels) == 0 or not samples[0]:
-            # create a leaf node with major label, tag=-1 indicates leaf node
-            return self.tree.create_node(-1, self.major_label(labels))
+        if self.max_depth == 0 or self.entropy_of(labels) == 0 or np.size(samples, 1) == 0:
+            # create a leaf node with major label, id=-1 indicates leaf node
+            return self.tree.create_node(identifier=-1, data=self.major_label(labels))
 
         # recursive case: build subtrees
         attr_idx, part_value = self.best_attr_of(samples, labels)
         # record partition attribute index & value
-        self.tree.create_node(attr_idx, part_value)
+        self.tree.create_node(identifier=attr_idx, data=part_value)
         # partition the samples and labels
         pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, labels, attr_idx, part_value)
 
@@ -45,8 +45,8 @@ class ID3(object):
         pos_subtree = ID3(self.max_depth - 1, self.use_gain_ratio)
         neg_subtree = ID3(self.max_depth - 1, self.use_gain_ratio)
         # recursively build tree
-        self.tree.paste(part_value, pos_subtree.fit(pos_subs, pos_labels))
-        self.tree.paste(part_value, neg_subtree.fit(neg_subs, neg_labels))
+        self.tree.paste(attr_idx, pos_subtree.fit(pos_subs, pos_labels))
+        self.tree.paste(attr_idx, neg_subtree.fit(neg_subs, neg_labels))
 
         return self.tree
 
@@ -175,11 +175,16 @@ class ID3(object):
 
     def partition(self, samples, labels, attr_idx, part_value):
         """
-
-        :param samples:
-        :param attr_idx:
-        :param part_value:
-        :return: positive subsamples, negative subsamples
+        partitions the samples and labels by input attribute and partition value
+        ----------
+        samples : array-like
+            the sample data
+        labels : array-like
+            the label data
+        attr_idx: int
+            the index of the selected attribute taken as node
+        part_value : float or String
+            the mid value we partition data with
         """
 
         # get the indexs of samples which are positive according to the partition
