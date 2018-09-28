@@ -4,10 +4,11 @@ This is an implementation of ID3 decision tree https://en.wikipedia.org/wiki/ID3
 Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
-import numpy as np
 from collections import Counter
+import numpy as np
 
 REMOVE_ATTRIBUTE = True
+IG_THRESHOLD = 0.0
 
 class ID3(object):
     """
@@ -44,7 +45,7 @@ class ID3(object):
         # recursive case: build subtrees
         self.attr_idx, self.part_val = self.best_attr_of(samples, labels)
 
-        # IG == 0
+        # early stopping: IG == 0
         if self.attr_idx == -1:
             self.part_val = self.major_label(labels)
             return
@@ -98,9 +99,8 @@ class ID3(object):
                 best_partition = curr_partition
                 best_attr_idx = i
 
-        if best_ig == 0.0:
+        if best_ig <= IG_THRESHOLD:
             best_attr_idx = -1
-            
         return best_attr_idx, best_partition
 
     def ig_of(self, attr, labels):
