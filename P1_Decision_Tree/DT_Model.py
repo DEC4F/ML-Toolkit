@@ -6,10 +6,9 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 
 import numpy as np
 from treelib import Node, Tree
+from collections import Counter
 
 REMOVE_ATTRIBUTE = True
-dpth = -1
-uq_lb = []
 
 class ID3(object):
     """
@@ -47,8 +46,8 @@ class ID3(object):
         pos_subtree = ID3(self.max_depth - 1, self.use_gain_ratio)
         neg_subtree = ID3(self.max_depth - 1, self.use_gain_ratio)
         # recursively build tree
-        self.tree.paste(attr_idx, pos_subtree.fit(pos_subs, pos_labels))
-        self.tree.paste(attr_idx, neg_subtree.fit(neg_subs, neg_labels))
+        self.tree.paste(nid=attr_idx, new_tree=pos_subtree.fit(pos_subs, pos_labels))
+        self.tree.paste(nid=attr_idx, new_tree=neg_subtree.fit(neg_subs, neg_labels))
 
         return self.tree
 
@@ -155,7 +154,6 @@ class ID3(object):
         labels : array-like
             a list of labels
         """
-        from collections import Counter
         occurence = list(Counter(labels).values())
         prob = list(map(lambda x: x/float(np.sum(occurence)), occurence))
         entropy = -np.sum(list(map(lambda x: x*np.log2(x), prob)))
@@ -206,19 +204,16 @@ class ID3(object):
             neg_subs = np.delete(neg_subs, attr_idx, axis=1)
 
         return pos_subs, neg_subs, pos_labels, neg_labels
+
     def major_label(self, labels):
-        labels_dict = {}
-        for key in uq_lb:
-            labels_dict[key] = list(labels).count(key)
-        print labels_dict
-        return max(labels_dict, key=labels_dict.get)
-
-    # def major_label(self, labels):
-    #     # TODO: fix empty label issue
-    #     from collections import Counter
-    #     keys = list(Counter(labels).keys())
-    #     counts = list(Counter(labels).values())
-
-    #     if counts[0] > counts[1]:
-    #         return keys[0]
-    #     return keys[1]
+        keys = list(Counter(labels).keys())
+        # if only contain one class
+        if len(keys) == 1:
+            return keys[0]
+        # if contains nothing (anomaly
+        elif not keys:
+            raise Exception("EMPTY_LABELS_ERROR")
+        counts = list(Counter(labels).values())
+        if counts[0] > counts[1]:
+            return keys[0]
+        return keys[1]
