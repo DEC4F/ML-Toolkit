@@ -8,6 +8,8 @@ import numpy as np
 from treelib import Node, Tree
 
 REMOVE_ATTRIBUTE = True
+dpth = -1
+uq_lb = []
 
 class ID3(object):
     """
@@ -29,8 +31,13 @@ class ID3(object):
             the labels
         return : whether or not self is a leaf node
         """
+        global dpth
+        global uq_lb
+        if dpth <0:
+            uq_lb = np.unique(labels)
+        dpth = self.tree.depth()
         # base case: max depth reached / pure node / run out of attributes
-        if self.max_depth == 0 or self.entropy_of(labels) == 0 or not samples[0]:
+        if self.max_depth == 0 or self.entropy_of(labels) == 0:
             # create a leaf node with major label, tag=-1 indicates leaf node
             return self.tree.create_node(-1, self.major_label(labels))
 
@@ -199,13 +206,19 @@ class ID3(object):
             neg_subs = np.delete(neg_subs, attr_idx, axis=1)
 
         return pos_subs, neg_subs, pos_labels, neg_labels
-
     def major_label(self, labels):
-        # TODO: fix empty label issue
-        from collections import Counter
-        keys = list(Counter(labels).keys())
-        counts = list(Counter(labels).values())
+        labels_dict = {}
+        for key in uq_lb:
+            labels_dict[key] = list(labels).count(key)
+        print labels_dict
+        return max(labels_dict, key=labels_dict.get)
 
-        if counts[0] > counts[1]:
-            return keys[0]
-        return keys[1]
+    # def major_label(self, labels):
+    #     # TODO: fix empty label issue
+    #     from collections import Counter
+    #     keys = list(Counter(labels).keys())
+    #     counts = list(Counter(labels).values())
+
+    #     if counts[0] > counts[1]:
+    #         return keys[0]
+    #     return keys[1]
