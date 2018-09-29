@@ -24,6 +24,8 @@ class ID3(object):
         self.attr_idx = None
         self.part_val = None
 
+        self.size = 1
+
     def fit(self, samples, labels):
         """
         build a id3 decision tree with input samples and labels
@@ -32,7 +34,7 @@ class ID3(object):
             the samples
         labels : array-like
             the labels
-        return : whether or not self is a leaf node
+        return : size of the tree treating self as root node
         """
         # base case: max depth reached / pure node / run out of attributes
         if self.max_depth == 0 or self.entropy_of(labels) == 0 or np.size(samples, 1) == 0:
@@ -59,6 +61,8 @@ class ID3(object):
         # recursively build tree
         self.pos_branch.fit(pos_subs, pos_labels)
         self.neg_branch.fit(neg_subs, neg_labels)
+
+        self.size += self.pos_branch.size + self.neg_branch.size
 
     def predict(self, x):
         """
