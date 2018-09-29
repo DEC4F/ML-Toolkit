@@ -10,6 +10,8 @@ import numpy as np
 import mldata
 from DT_Model import ID3
 
+K = 5
+
 def main():
     """
     run the decision tree with param given by user
@@ -30,9 +32,19 @@ def main():
         dt.fit(samples, targets)
     else:
         dt = ID3(max_depth, use_gain_ratio)
-        # TODO: do CV on k-fold
+        print(k_fold_cv(dt, examples, K))
 
-def k_fold_cv(dt, data, k):
+def k_fold_cv(model, data, k):
+    """
+    perform k fold cross validation on the model
+    ----------
+    model : ID3
+          an instance of ID3 to be cross validated
+    data : array-like
+          the entire dataset
+    k : int
+          the parameter in cross validation determing how many fold we're doing
+    """
     data_split = np.array_split(data, k)
     acc = []
     for i in range(0, k):
@@ -43,19 +55,26 @@ def k_fold_cv(dt, data, k):
         train_targets = train_data[:, -1]
         val_samples = val_data[:, 1:-1]
         val_targets = [bool(x) for x in val_data[:, -1]]
-        dt.fit(train_samples, train_targets)
-        pred = [bool(dt.predict(val_samples[j, :])) for j in range(val_samples.shape[0])]
+        model.fit(train_samples, train_targets)
+        pred = [bool(model.predict(val_samples[j, :])) for j in range(val_samples.shape[0])]
         acc.append(accuracy(val_targets, pred))
-        print str(i + 1), " Fold Validated"
     return sum(acc) / float(k)
 
-def accuracy(labels, predictions):
-    assert len(labels) == len(predictions)
+def accuracy(y_true, y_pred):
+    """
+    calculate the accuracy of prediction
+    ----------
+    y_true : array-like
+          true class labels
+    y_pred : array-like
+          predicted class labels
+    """
+    assert len(y_true) == len(y_pred)
     count = 0
-    for i in range(len(labels)):
-        if labels[i] == predictions[i]:
+    for i in range(len(y_true)):
+        if y_true[i] == y_pred[i]:
             count += 1
-    return count / float(len(labels))
+    return count / float(len(y_true))
 
 if __name__ == '__main__':
     main()
