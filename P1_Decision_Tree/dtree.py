@@ -10,7 +10,7 @@ import numpy as np
 import mldata
 from DT_Model import ID3
 
-K = 5
+K = 5 # number of folds
 
 def main():
     """
@@ -28,11 +28,14 @@ def main():
         max_depth = int(1e9)
     # run on full sample
     if use_full_sample:
-        dt = ID3(int(max_depth), use_gain_ratio)
+        dt = ID3(max_depth, use_gain_ratio)
         dt.fit(samples, targets)
     else:
         dt = ID3(max_depth, use_gain_ratio)
-        print(k_fold_cv(dt, examples, K))
+        print("Accuracy: ", str(k_fold_cv(dt, examples, K)))
+    print("Size: ", str(dt.size))
+    print("Maximum Depth: ", str(dt.max_depth))
+    print("First Feature: ")
 
 def k_fold_cv(model, data, k):
     """
