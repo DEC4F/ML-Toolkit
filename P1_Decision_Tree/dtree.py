@@ -21,7 +21,8 @@ def main():
     # parse args
     [use_full_sample, max_depth, use_gain_ratio] = [int(use_full_sample), int(max_depth), int(use_gain_ratio)]
     # parse dataset
-    examples = np.array(mldata.parse_c45(file_path.split(os.sep)[-1], file_path), dtype=object)
+    raw_parsed = mldata.parse_c45(file_path.split(os.sep)[-1], file_path)
+    examples = np.array(raw_parsed, dtype=object)
     samples = examples[:, 1:-1]
     targets = examples[:, -1]
     # grow a huge tree (gurantees to cover a full tree) if input specifies 0 in max_depth
@@ -36,7 +37,7 @@ def main():
         print("Accuracy: ", str(k_fold_cv(dt, examples, K)))
     print("Size: ", str(dt.size))
     print("Maximum Depth: ", str(dt.max_depth))
-    print("First Feature: ")
+    print("First Feature: ", str(raw_parsed.examples[0].schema.features[dt.attr_idx+1].name))
 
 def k_fold_cv(model, data, k):
     """

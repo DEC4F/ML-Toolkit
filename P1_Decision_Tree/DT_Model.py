@@ -28,7 +28,7 @@ class ID3(object):
         self.size = 1
         self.feature = None
 
-    def fit(self, samples, labels, names):
+    def fit(self, samples, labels):
         """
         build a id3 decision tree with input samples and labels
         ---------
@@ -36,8 +36,6 @@ class ID3(object):
             the samples
         labels : array-like
             the labels
-        names : array-like
-            list of names  of features
         """
         # base case: max depth reached / pure node / run out of attributes
         if self.curr_depth == 0 or self.entropy_of(labels) == 0 or np.size(samples, 1) == 0:
@@ -54,8 +52,6 @@ class ID3(object):
             self.part_val = self.major_label(labels)
             return
 
-        self.feature = names[self.attr_idx]
-
         # partition the samples and labels
         pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, labels, self.attr_idx, self.part_val)
 
@@ -63,11 +59,10 @@ class ID3(object):
         self.pos_branch = ID3(self.curr_depth - 1, self.use_gain_ratio)
         self.neg_branch = ID3(self.curr_depth - 1, self.use_gain_ratio)
 
-        sub_names = np.delete(names, self.attr_idx)
         # recursively build tree
 
-        self.pos_branch.fit(pos_subs, pos_labels, sub_names)
-        self.neg_branch.fit(neg_subs, neg_labels, sub_names)
+        self.pos_branch.fit(pos_subs, pos_labels)
+        self.neg_branch.fit(neg_subs, neg_labels)
 
         self.size += self.pos_branch.size + self.neg_branch.size
         self.max_depth = max(self.pos_branch.max_depth, self.neg_branch.max_depth) + 1
