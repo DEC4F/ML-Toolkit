@@ -4,20 +4,21 @@ This is an implementation of ID3 decision tree https://en.wikipedia.org/wiki/ID3
 Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
-import numpy as np
 from collections import Counter
+import numpy as np
 
 REMOVE_ATTRIBUTE = True
+IG_THRESHOLD = 0.0
 
 class ID3(object):
     """
     a ID3 decision tree
     """
 
-    def __init__(self, max_depth, use_gain_ratio):
-        self.max_depth = max_depth
+    def __init__(self, curr_depth, use_gain_ratio):
+        self.curr_depth = curr_depth
         self.use_gain_ratio = use_gain_ratio
-        # ID3
+        # create 2 ID3 branches
         self.pos_branch = None
         self.neg_branch = None
 
@@ -37,7 +38,7 @@ class ID3(object):
         return : size of the tree treating self as root node
         """
         # base case: max depth reached / pure node / run out of attributes
-        if self.max_depth == 0 or self.entropy_of(labels) == 0 or np.size(samples, 1) == 0:
+        if self.curr_depth == 0 or self.entropy_of(labels) == 0 or np.size(samples, 1) == 0:
             # create a leaf node with major label, id=-1 indicates leaf node
             self.attr_idx = -1
             self.part_val = self.major_label(labels)
@@ -46,7 +47,7 @@ class ID3(object):
         # recursive case: build subtrees
         self.attr_idx, self.part_val = self.best_attr_of(samples, labels)
 
-        # IG == 0
+        # early stopping: IG == 0
         if self.attr_idx == -1:
             self.part_val = self.major_label(labels)
             return
@@ -55,8 +56,8 @@ class ID3(object):
         pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, labels, self.attr_idx, self.part_val)
 
         # init two branches
-        self.pos_branch = ID3(self.max_depth - 1, self.use_gain_ratio)
-        self.neg_branch = ID3(self.max_depth - 1, self.use_gain_ratio)
+        self.pos_branch = ID3(self.curr_depth - 1, self.use_gain_ratio)
+        self.neg_branch = ID3(self.curr_depth - 1, self.use_gain_ratio)
 
         # recursively build tree
         self.pos_branch.fit(pos_subs, pos_labels)
@@ -106,9 +107,8 @@ class ID3(object):
                 best_partition = curr_partition
                 best_attr_idx = i
 
-        if best_ig == 0.0:
+        if best_ig <= IG_THRESHOLD:
             best_attr_idx = -1
-
         return best_attr_idx, best_partition
 
     def ig_of(self, attr, labels):
