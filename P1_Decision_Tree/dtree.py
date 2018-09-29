@@ -32,5 +32,30 @@ def main():
         dt = ID3(max_depth, use_gain_ratio)
         # TODO: do CV on k-fold
 
+def k_fold_cv(dt, data, k):
+    data_split = np.array_split(data, k)
+    acc = []
+    for i in range(0, k):
+        train_data = np.delete(data_split, (i), axis=0)
+        train_data = np.concatenate(train_data)
+        val_data = data_split[i]
+        train_samples = train_data[:, 1:-1]
+        train_targets = train_data[:, -1]
+        val_samples = val_data[:, 1:-1]
+        val_targets = [bool(x) for x in val_data[:, -1]]
+        dt.fit(train_samples, train_targets)
+        pred = [bool(dt.predict(val_samples[j, :])) for j in range(val_samples.shape[0])]
+        acc.append(accuracy(val_targets, pred))
+        print str(i + 1), " Fold Validated"
+    return sum(acc) / float(k)
+
+def accuracy(labels, predictions):
+    assert len(labels) == len(predictions)
+    count = 0
+    for i in range(len(labels)):
+        if labels[i] == predictions[i]:
+            count += 1
+    return count / float(len(labels))
+
 if __name__ == '__main__':
     main()
