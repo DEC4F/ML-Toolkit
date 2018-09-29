@@ -190,7 +190,10 @@ class ID3(object):
         for symbol in unique_symbol:
             curr_ig = self.ig_discrete(attr, symbol, labels)
             curr_entrp = self.entropy_of_discrete(attr, symbol)
-            curr_gr = curr_ig/curr_entrp
+            if curr_entrp == 0:
+                curr_gr = 0.0
+            else:
+                curr_gr = curr_ig/float(curr_entrp)
             if best_gr <= curr_gr:
                 best_gr = curr_gr
                 best_symbol = symbol
@@ -216,7 +219,10 @@ class ID3(object):
             part_val = (sorted_xy_pair[:, 0][i] + sorted_xy_pair[:, 0][i - 1]) / 2
             curr_ig = self.ig_cont(sorted_attr, part_val, sorted_label)
             curr_entrp = self.entropy_of_cont(sorted_attr, part_val)
-            curr_gr = curr_ig/curr_entrp
+            if curr_entrp == 0:
+                curr_gr = 0.0
+            else:
+                curr_gr = curr_ig/float(curr_entrp)
             # Finding the maximum information gain
             if best_gr <= curr_gr:
                 best_gr = curr_gr
@@ -237,7 +243,9 @@ class ID3(object):
 
     def entropy_of_discrete(self, attr, symbol):
         sym = attr[attr[:] == symbol]
-        p_sym = len(sym)/len(attr)
+        p_sym = len(sym)/float(len(attr))
+        if p_sym == 1 or p_sym == 0:
+            return 0
         entropy = -p_sym*np.log2(p_sym) - (1-p_sym)*np.log2(1-p_sym)
         return entropy
 
@@ -249,7 +257,9 @@ class ID3(object):
         :return:
         """
         positive = attr[attr[:] <= part_val]
-        p_positive = len(positive)/len(attr)
+        p_positive = len(positive)/float(len(attr))
+        if p_positive == 1 or p_positive == 0:
+            return 0
         entropy = -p_positive * np.log2(p_positive) - (1 - p_positive) * np.log2(1 - p_positive)
         return entropy
 
