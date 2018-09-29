@@ -92,7 +92,11 @@ class ID3(object):
         best_ig = 0.0
         best_attr_idx = None
         for i, attr in enumerate(samples.T):
-            curr_ig, curr_partition = self.ig_of(attr, labels)
+            if self.use_gain_ratio:
+                curr_ig, curr_partition = self.gr_of(attr, labels)
+            else:
+                curr_ig, curr_partition = self.ig_of(attr, labels)
+
             if best_ig <= curr_ig:
                 best_ig = curr_ig
                 best_partition = curr_partition
@@ -100,7 +104,7 @@ class ID3(object):
 
         if best_ig == 0.0:
             best_attr_idx = -1
-            
+
         return best_attr_idx, best_partition
 
     def ig_of(self, attr, labels):
@@ -108,7 +112,7 @@ class ID3(object):
         calculates the information gain if data partitioned by input attr
         ----------
         attr : array-like
-            a sorted list of values of a single attribute
+            a list of values of a single attribute
         labels : array-like
             a list of values of labels
         """
@@ -123,18 +127,10 @@ class ID3(object):
         calculates the information gain of input attribute
         :returns : best_ig, best_symbol
         """
-        og_ent = self.entropy_of(labels)
-        xy_pair = np.array([attr, labels]).T
-        unique_symbol = np.unique(xy_pair[:, 0])
+        unique_symbol = np.unique(attr)
         best_ig = 0.0
         for symbol in unique_symbol:
-            sym = xy_pair[xy_pair[:, 0] == symbol]
-            non_sym = xy_pair[xy_pair[:, 0] != symbol]
-            # calculate probability of current symbol
-            p_sym = len(sym) / float(len(xy_pair))
-            # calculate entropy of entire attribute using current symbol
-            curr_ent = self.entropy_of(sym[:, 1])*p_sym + self.entropy_of(non_sym[:, 1])*(1-p_sym)
-            curr_ig = og_ent - curr_ent
+            curr_ig = self.ig_discrete(attr, symbol, labels)
             if best_ig <= curr_ig:
                 best_ig = curr_ig
                 best_symbol = symbol
@@ -148,28 +144,80 @@ class ID3(object):
             a list of labels
         :return : best_ig, best_partition
         """
-        og_ent = self.entropy_of(labels)
         cont_xy_pair = np.array([attr, labels]).T
         # Sort the attribute label ascendingly
         sorted_xy_pair = cont_xy_pair[cont_xy_pair[:, 0].argsort(kind='mergesort')]
+        sorted_attr = sorted_xy_pair[:, 0]
+        sorted_label = sorted_xy_pair[:, 1]
         # list of the indexes of samples where class label changed
         changed_idx = np.where(sorted_xy_pair[:, 1] != np.roll(sorted_xy_pair[:, 1], 1))[0]
-        best_ig = -100.0
+        best_ig = 0.0
         for i in changed_idx[1:]:
-            # partition list into 2 branches
-            curr_partition = (sorted_xy_pair[:, 0][i] + sorted_xy_pair[:, 0][i-1])/2
-            left_branch = sorted_xy_pair[sorted_xy_pair[:, 0] <= curr_partition]
-            right_branch = sorted_xy_pair[sorted_xy_pair[:, 0] > curr_partition]
-            # calculate information gain of current split
-            p_left = (left_branch.shape[0])/float(sorted_xy_pair.shape[0])
-            p_right = (right_branch.shape[0])/float(sorted_xy_pair.shape[0])
-            curr_ent = p_left*self.entropy_of(left_branch[:, 1]) + p_right*self.entropy_of(right_branch[:, 1])
-            curr_ig = og_ent - curr_ent
+            part_val = (sorted_xy_pair[:, 0][i] + sorted_xy_pair[:, 0][i-1])/2
+            curr_ig = self.ig_cont(sorted_attr, part_val, sorted_label)
             # Finding the maximum information gain
             if best_ig <= curr_ig:
                 best_ig = curr_ig
-                best_partition = curr_partition
+                best_partition = part_val
         return best_ig, best_partition
+
+    def gr_of(self, attr, labels):
+        """
+        calculates the gain ratio of input attribute
+        ----------
+        attr : array-like
+            a sorted list of values of a single attribute
+        labels : array-like
+            a list of values of labels
+        """
+        if isinstance(attr[0], float):
+            # attr is continuous
+            return self.gr_of_cont_attr(attr, labels)
+        # attr is discrete or boolean
+        return self.gr_of_discrete_attr(attr, labels)
+
+    def gr_of_discrete_attr(self, attr, labels):
+        """
+        calculates the information gain of input attribute
+        :returns : best_ig, best_symbol
+        """
+        unique_symbol = np.unique(attr)
+        best_gr = 0.0
+        for symbol in unique_symbol:
+            curr_ig = self.ig_discrete(attr, symbol, labels)
+            curr_entrp = self.entropy_of_discrete(attr, symbol)
+            curr_gr = curr_ig/curr_entrp
+            if best_gr <= curr_gr:
+                best_gr = curr_gr
+                best_symbol = symbol
+        return best_gr, best_symbol
+
+    def gr_of_cont_attr(self, attr, labels):
+        """
+        calculates entropy of input continuous labels
+        ----------
+        labels : array-like
+            a list of labels
+        :return : best_ig, best_partition
+        """
+        cont_xy_pair = np.array([attr, labels]).T
+        # Sort the attribute label ascendingly
+        sorted_xy_pair = cont_xy_pair[cont_xy_pair[:, 0].argsort(kind='mergesort')]
+        sorted_attr = sorted_xy_pair[:, 0]
+        sorted_label = sorted_xy_pair[:, 1]
+        # list of the indexes of samples where class label changed
+        changed_idx = np.where(sorted_xy_pair[:, 1] != np.roll(sorted_xy_pair[:, 1], 1))[0]
+        best_gr = 0.0
+        for i in changed_idx[1:]:
+            part_val = (sorted_xy_pair[:, 0][i] + sorted_xy_pair[:, 0][i - 1]) / 2
+            curr_ig = self.ig_cont(sorted_attr, part_val, sorted_label)
+            curr_entrp = self.entropy_of_cont(sorted_attr, part_val)
+            curr_gr = curr_ig/curr_entrp
+            # Finding the maximum information gain
+            if best_gr <= curr_gr:
+                best_gr = curr_gr
+                best_partition = part_val
+        return best_gr, best_partition
 
     def entropy_of(self, labels):
         """
@@ -183,19 +231,23 @@ class ID3(object):
         entropy = -np.sum(list(map(lambda x: x*np.log2(x), prob)))
         return entropy
 
-    def gr_of(self, attr, labels):
+    def entropy_of_discrete(self, attr, symbol):
+        sym = attr[attr[:] == symbol]
+        p_sym = len(sym)/len(attr)
+        entropy = -p_sym*np.log2(p_sym) - (1-p_sym)*np.log2(1-p_sym)
+        return entropy
+
+    def entropy_of_cont(self, attr, part_val):
         """
-        calculates the gain ratio of input attribute
-        ----------
-        attr : array-like
-            a sorted list of values of a single attribute
-        labels : array-like
-            a list of values of labels
+
+        :param attr: sorted
+        :param part_val:
+        :return:
         """
-        information_gain = self.ig_of(attr, labels)
-        entropy = self.entropy_of(attr)
-        gain_ratio = information_gain / float(entropy)
-        return gain_ratio
+        positive = attr[attr[:] <= part_val]
+        p_positive = len(positive)/len(attr)
+        entropy = -p_positive * np.log2(p_positive) - (1 - p_positive) * np.log2(1 - p_positive)
+        return entropy
 
     def partition(self, samples, labels, attr_idx, part_value):
         """
@@ -241,3 +293,38 @@ class ID3(object):
         if counts[0] > counts[1]:
             return keys[0]
         return keys[1]
+
+    def ig_discrete(self, attr, symbol, labels):
+        og_ent = self.entropy_of(labels)
+        xy_pair = np.array([attr, labels]).T
+
+        sym = xy_pair[xy_pair[:, 0] == symbol]
+        non_sym = xy_pair[xy_pair[:, 0] != symbol]
+        # calculate probability of current symbol
+        p_sym = len(sym) / float(len(xy_pair))
+        # calculate entropy of entire attribute using current symbol
+        curr_ent = self.entropy_of(sym[:, 1]) * p_sym + self.entropy_of(non_sym[:, 1]) * (1 - p_sym)
+        curr_ig = og_ent - curr_ent
+
+        return curr_ig
+
+    def ig_cont(self, attr, part_val, labels):
+        """
+
+        :param attr: a sorted list of continuous values
+        :param part_val: partition value
+        :param labels:
+        :return:
+        """
+        og_ent = self.entropy_of(labels)
+        cont_xy_pair = np.array([attr, labels]).T
+        # partition list into 2 branches
+        left_branch = cont_xy_pair[cont_xy_pair[:, 0] <= part_val]
+        right_branch = cont_xy_pair[cont_xy_pair[:, 0] > part_val]
+        # calculate information gain of current split
+        p_left = (left_branch.shape[0]) / float(cont_xy_pair.shape[0])
+        p_right = (right_branch.shape[0]) / float(cont_xy_pair.shape[0])
+        curr_ent = p_left * self.entropy_of(left_branch[:, 1]) + p_right * self.entropy_of(right_branch[:, 1])
+        curr_ig = og_ent - curr_ent
+
+        return curr_ig
