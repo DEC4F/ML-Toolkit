@@ -24,7 +24,7 @@ class ID3(object):
 
         self.attr_idx = None
         self.part_val = None
-
+        self.max_depth = 0
         self.size = 1
 
     def fit(self, samples, labels):
@@ -62,8 +62,8 @@ class ID3(object):
         # recursively build tree
         self.pos_branch.fit(pos_subs, pos_labels)
         self.neg_branch.fit(neg_subs, neg_labels)
-
         self.size += self.pos_branch.size + self.neg_branch.size
+        self.max_depth = max(self.pos_branch.max_depth, self.neg_branch.max_depth) + 1
 
     def predict(self, x):
         """
