@@ -15,6 +15,7 @@ K = 5 # number of folds
 def main():
     """
     run the decision tree with param given by user
+    ----------
     """
     file_path, use_full_sample, max_depth, use_gain_ratio = sys.argv[1:5]
     # parse args
@@ -74,7 +75,7 @@ def accuracy(y_true, y_pred):
     """
     assert len(y_true) == len(y_pred)
     count = 0
-    for i in range(len(y_true)):
+    for i, _ in enumerate(y_true):
         if y_true[i] == y_pred[i]:
             count += 1
     return count / float(len(y_true))

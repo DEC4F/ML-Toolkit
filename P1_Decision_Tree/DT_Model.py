@@ -21,7 +21,6 @@ class ID3(object):
         # create 2 ID3 branches
         self.pos_branch = None
         self.neg_branch = None
-
         self.attr_idx = None
         self.part_val = None
         self.max_depth = 0
@@ -35,7 +34,6 @@ class ID3(object):
             the samples
         labels : array-like
             the labels
-        return : size of the tree treating self as root node
         """
         # base case: max depth reached / pure node / run out of attributes
         if self.curr_depth == 0 or self.entropy_of(labels) == 0 or np.size(samples, 1) == 0:
@@ -67,13 +65,12 @@ class ID3(object):
 
     def predict(self, x):
         """
-        predict the samples' class labels
+        predict the input instance's class label
+        can only predict one sample at a time
         ----------
         samples : array-like
             the sample data
         """
-        # TODO: implement predict func
-        # self is leaf node
         if self.attr_idx == -1:
             return self.part_val
 
@@ -93,7 +90,6 @@ class ID3(object):
         samples : array-like
             the sample data
         """
-        # TODO: add if use_gr, then use gr_of()
         best_ig = 0.0
         best_attr_idx = None
         for i, attr in enumerate(samples.T):
@@ -129,7 +125,11 @@ class ID3(object):
     def ig_of_discrete_attr(self, attr, labels):
         """
         calculates the information gain of input attribute
-        :returns : best_ig, best_symbol
+        ----------
+        attr : array-like
+            the attribute column
+        labels : array-like
+            the class label column
         """
         unique_symbol = np.unique(attr)
         best_ig = 0.0
@@ -140,13 +140,38 @@ class ID3(object):
                 best_symbol = symbol
         return best_ig, best_symbol
 
+    def ig_discrete(self, attr, symbol, labels):
+        """
+        calculate the IG of the input symbol in a discrete attribute
+        ----------
+        attr : array-like
+            the attribute column
+        symbol : object
+            a value in the discrete attribute
+        labels : array-like
+            the class label column
+        """
+        og_ent = self.entropy_of(labels)
+        xy_pair = np.array([attr, labels]).T
+
+        sym = xy_pair[xy_pair[:, 0] == symbol]
+        non_sym = xy_pair[xy_pair[:, 0] != symbol]
+        # calculate probability of current symbol
+        p_sym = len(sym) / float(len(xy_pair))
+        # calculate entropy of entire attribute using current symbol
+        curr_ent = self.entropy_of(sym[:, 1]) * p_sym + self.entropy_of(non_sym[:, 1]) * (1 - p_sym)
+        curr_ig = og_ent - curr_ent
+
+        return curr_ig
+
     def ig_of_cont_attr(self, attr, labels):
         """
         calculates entropy of input continuous labels
         ----------
+        attr : array-like
+            the attribute column
         labels : array-like
-            a list of labels
-        :return : best_ig, best_partition
+            the class label column
         """
         cont_xy_pair = np.array([attr, labels]).T
         # Sort the attribute label ascendingly
@@ -164,6 +189,30 @@ class ID3(object):
                 best_ig = curr_ig
                 best_partition = part_val
         return best_ig, best_partition
+
+    def ig_cont(self, attr, part_val, labels):
+        """
+        calculate the IG of partitioning by a the input part_val in a cont attribute
+        ----------
+        attr : array-like
+            the attribute column
+        part_val : float
+            the value used to partition dataset
+        labels : array-like
+            the class label column
+        """
+        og_ent = self.entropy_of(labels)
+        cont_xy_pair = np.array([attr, labels]).T
+        # partition list into 2 branches
+        left_branch = cont_xy_pair[cont_xy_pair[:, 0] <= part_val]
+        right_branch = cont_xy_pair[cont_xy_pair[:, 0] > part_val]
+        # calculate information gain of current split
+        p_left = (left_branch.shape[0]) / float(cont_xy_pair.shape[0])
+        p_right = (right_branch.shape[0]) / float(cont_xy_pair.shape[0])
+        curr_ent = p_left * self.entropy_of(left_branch[:, 1]) + p_right * self.entropy_of(right_branch[:, 1])
+        curr_ig = og_ent - curr_ent
+
+        return curr_ig
 
     def gr_of(self, attr, labels):
         """
@@ -183,7 +232,11 @@ class ID3(object):
     def gr_of_discrete_attr(self, attr, labels):
         """
         calculates the information gain of input attribute
-        :returns : best_ig, best_symbol
+        ----------
+        attr : array-like
+            the attribute column
+        labels : array-like
+            the class label column
         """
         unique_symbol = np.unique(attr)
         best_gr = 0.0
@@ -203,9 +256,10 @@ class ID3(object):
         """
         calculates entropy of input continuous labels
         ----------
+        attr : array-like
+            the attribute column
         labels : array-like
-            a list of labels
-        :return : best_ig, best_partition
+            the class label column
         """
         cont_xy_pair = np.array([attr, labels]).T
         # Sort the attribute label ascendingly
@@ -242,6 +296,14 @@ class ID3(object):
         return entropy
 
     def entropy_of_discrete(self, attr, symbol):
+        """
+        calculates the entropy of choosing the input symbol in a discrete attribute
+        ----------
+        attr : array-like
+            the attribute column
+        symbol : object
+            a value in the discrete attribute
+        """
         sym = attr[attr[:] == symbol]
         p_sym = len(sym)/float(len(attr))
         if p_sym == 1 or p_sym == 0:
@@ -251,10 +313,12 @@ class ID3(object):
 
     def entropy_of_cont(self, attr, part_val):
         """
-
-        :param attr: sorted
-        :param part_val:
-        :return:
+        calculates the entropy of choosing the input symbol in a continuous attribute
+        ----------
+        attr : array-like
+            the attribute column
+        part_val : float
+            the value we partition the data by
         """
         positive = attr[attr[:] <= part_val]
         p_positive = len(positive)/float(len(attr))
@@ -296,6 +360,12 @@ class ID3(object):
         return pos_subs, neg_subs, pos_labels, neg_labels
 
     def major_label(self, labels):
+        """
+        return the label that is majority in the leaf node
+        ----------
+        labels : array-like
+            the label column
+        """
         keys = list(Counter(labels).keys())
         # if only contain one class
         if len(keys) == 1:
@@ -307,38 +377,3 @@ class ID3(object):
         if counts[0] > counts[1]:
             return keys[0]
         return keys[1]
-
-    def ig_discrete(self, attr, symbol, labels):
-        og_ent = self.entropy_of(labels)
-        xy_pair = np.array([attr, labels]).T
-
-        sym = xy_pair[xy_pair[:, 0] == symbol]
-        non_sym = xy_pair[xy_pair[:, 0] != symbol]
-        # calculate probability of current symbol
-        p_sym = len(sym) / float(len(xy_pair))
-        # calculate entropy of entire attribute using current symbol
-        curr_ent = self.entropy_of(sym[:, 1]) * p_sym + self.entropy_of(non_sym[:, 1]) * (1 - p_sym)
-        curr_ig = og_ent - curr_ent
-
-        return curr_ig
-
-    def ig_cont(self, attr, part_val, labels):
-        """
-
-        :param attr: a sorted list of continuous values
-        :param part_val: partition value
-        :param labels:
-        :return:
-        """
-        og_ent = self.entropy_of(labels)
-        cont_xy_pair = np.array([attr, labels]).T
-        # partition list into 2 branches
-        left_branch = cont_xy_pair[cont_xy_pair[:, 0] <= part_val]
-        right_branch = cont_xy_pair[cont_xy_pair[:, 0] > part_val]
-        # calculate information gain of current split
-        p_left = (left_branch.shape[0]) / float(cont_xy_pair.shape[0])
-        p_right = (right_branch.shape[0]) / float(cont_xy_pair.shape[0])
-        curr_ent = p_left * self.entropy_of(left_branch[:, 1]) + p_right * self.entropy_of(right_branch[:, 1])
-        curr_ig = og_ent - curr_ent
-
-        return curr_ig
