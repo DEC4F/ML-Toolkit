@@ -5,6 +5,7 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
 import numpy as np
+import math
 
 class NaiveBayes(object):
     """
@@ -24,7 +25,32 @@ class NaiveBayes(object):
         labels : array-like
             the labels
         """
+
+    def mean(self, numbers):
+        """
+        calculate the mean of the given attribute list
+        ----------
+        numbers : array-like
+            the numbers
+
+        """
+        return sum(numbers) / float(len(numbers))
+
         pass
+
+    def stdev(self, numbers):
+        """
+       calculate the standard deviation of the given attribute list
+       ----------
+       numbers : array-like
+           the numbers
+
+       """
+        avg = mean(numbers)
+        variance = sum([pow(x - avg, 2) for x in numbers]) / float(len(numbers) - 1)
+        return math.sqrt(variance)
+
+
 
     def predict(self, x):
         """
