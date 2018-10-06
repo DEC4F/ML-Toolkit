@@ -61,3 +61,27 @@ class NaiveBayes(object):
             the sample data
         """
         pass
+
+    def discretize(self, numbers, k):
+        """
+
+        :param numbers:
+            array-like, continuous values to be discretized
+        :param k: partition the range of the feature into k bins
+        :return:
+        """
+
+        min = np.min(numbers)
+        bin_size = (np.max(numbers) - min) / k
+
+        for i in range(len(numbers)):
+            bin_number = 0
+            upper_bound = min + bin_size
+
+            # search the bin to which numbers[i] belongs
+            while numbers[i] > upper_bound:
+                bin_number += 1
+                upper_bound += bin_size
+
+            # replace the feature with the bin number
+            numbers[i] = bin_number
