@@ -25,6 +25,7 @@ class NaiveBayes(object):
         labels : array-like
             the labels
         """
+        pass
 
     def mean(self, numbers):
         """
@@ -36,8 +37,6 @@ class NaiveBayes(object):
         """
         return sum(numbers) / float(len(numbers))
 
-        pass
-
     def stdev(self, numbers):
         """
        calculate the standard deviation of the given attribute list
@@ -46,11 +45,9 @@ class NaiveBayes(object):
            the numbers
 
        """
-        avg = mean(numbers)
+        avg = self.mean(numbers)
         variance = sum([pow(x - avg, 2) for x in numbers]) / float(len(numbers) - 1)
         return math.sqrt(variance)
-
-
 
     def predict(self, x):
         """
@@ -62,26 +59,13 @@ class NaiveBayes(object):
         """
         pass
 
-    def discretize(self, numbers, k):
+    def discretize(self, cont_attr):
         """
-
-        :param numbers:
-            array-like, continuous values to be discretized
-        :param k: partition the range of the feature into k bins
-        :return:
+        cont_attr : array-like
+            continuous attribute (column of values) to be discretized
+        n_bins : int
+            partition the range of the feature into n bins
         """
-
-        min = np.min(numbers)
-        bin_size = (np.max(numbers) - min) / k
-
-        for i in range(len(numbers)):
-            bin_number = 0
-            upper_bound = min + bin_size
-
-            # search the bin to which numbers[i] belongs
-            while numbers[i] > upper_bound:
-                bin_number += 1
-                upper_bound += bin_size
-
-            # replace the feature with the bin number
-            numbers[i] = bin_number
+        # generate evenly spaced list with n+1 values (n gaps/bins)
+        bins = np.linspace(min(cont_attr), max(cont_attr), num=self.n_bins + 1)
+        return np.digitize(cont_attr, bins)
