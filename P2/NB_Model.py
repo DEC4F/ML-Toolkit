@@ -5,9 +5,6 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
 import numpy as np
-import math
-from collections import Counter, defaultdict
-
 
 class NaiveBayes(object):
     """
@@ -18,7 +15,7 @@ class NaiveBayes(object):
         self.n_bins = n_bins
         self.m_estimate = m_estimate
         # Pr(Y = True)
-        self.prob_Y = None
+        self.prob_y = None
         # probability dictionary
         self.prob_dict = {}
         self.prob_dict[True] = {}
@@ -40,8 +37,7 @@ class NaiveBayes(object):
             self.prob_dict[False][i] = probs[:, 1]
 
         true_labels = labels[labels[:]]
-        self.prob_Y = len(true_labels) / float(len(labels))
-
+        self.prob_y = len(true_labels) / float(len(labels))
 
     def predict(self, x):
         """
@@ -64,24 +60,31 @@ class NaiveBayes(object):
         bins = np.linspace(min(cont_attr)-1, max(cont_attr)+1, num=self.n_bins + 1)
         return np.digitize(cont_attr, bins)
 
+    def likelihood(self, al_pair):
+        """
+        calculates the likelihood of attribute taking on a unique value given its label
+        ----------
+        al_pair : array-like
+            the attribute and label pair
+        """
+        # number of unique value of input attribute
+        _v = len(np.unique(al_pair[:, 0]))
+        # unique value and its corresponding conditional probability
+        lh_array = np.zeros((_v, 2))
+        for idx, uniq_val in enumerate(np.unique(al_pair[:, 0])):
+            lh_array[idx, 0] = self.compute_lh(al_pair[al_pair[:, 1] == True], uniq_val, _v)
+            lh_array[idx, 1] = self.compute_lh(al_pair[al_pair[:, 1] == False], uniq_val, _v)
+        return lh_array
 
-
-
-    def prior_probab(self, labels):
-        no_of_examples = len(labels)
-        prob = dict(Counter(labels))
-        for key in prob.keys():
-            prob[key] = prob[key] / float(no_of_examples)
-        return prob
-
-
-    def likelihood_attr(self, samples,labels):
-        likelihoods = {}
-        for label in np.unique(labels):
-            likelihoods[label] = defaultdict(list)
-            row_indices = np.where(labels == label)[0]
-            atr_subset = samples[row_indices, :]
-            for j in range(0, np.shape(atr_subset)[1]):
-                likelihoods[label][j] += list(atr_subset[:, j])
-                likelihoods[label][j] = prior_probab(likelihoods[label][j])
-        return likelihoods
+    def compute_lh(self, al_pure_pair, xi, v):
+        """
+        computes the likelihood of attribute taking on xi as value given its label
+        ----------
+        al_pair : array-like
+            the attribute and label pair
+        """
+        # (number of examples with Xi = xi and Y = y) + mp
+        numerator = len(al_pure_pair[al_pure_pair[:, 0] == xi]) + self.m_estimate/float(v)
+        # (number of examples with Y = y) + m
+        denominator = len(al_pure_pair) + self.m_estimate
+        return numerator / float(denominator)
