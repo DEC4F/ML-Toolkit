@@ -45,5 +45,5 @@ class NaiveBayes(object):
             partition the range of the feature into n bins
         """
         # generate evenly spaced list with n+1 values (n gaps/bins)
-        bins = np.linspace(min(cont_attr), max(cont_attr), num=self.n_bins + 1)
+        bins = np.linspace(min(cont_attr)-1, max(cont_attr)+1, num=self.n_bins + 1)
         return np.digitize(cont_attr, bins)
