@@ -27,28 +27,6 @@ class NaiveBayes(object):
         """
         pass
 
-    def mean(self, numbers):
-        """
-        calculate the mean of the given attribute list
-        ----------
-        numbers : array-like
-            the numbers
-
-        """
-        return sum(numbers) / float(len(numbers))
-
-    def stdev(self, numbers):
-        """
-       calculate the standard deviation of the given attribute list
-       ----------
-       numbers : array-like
-           the numbers
-
-       """
-        avg = self.mean(numbers)
-        variance = sum([pow(x - avg, 2) for x in numbers]) / float(len(numbers) - 1)
-        return math.sqrt(variance)
-
     def predict(self, x):
         """
         predict the input instance's class label
