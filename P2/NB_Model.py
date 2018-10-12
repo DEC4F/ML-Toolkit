@@ -15,6 +15,12 @@ class NaiveBayes(object):
     def __init__(self, n_bins, m_estimate):
         self.n_bins = n_bins
         self.m_estimate = m_estimate
+        # Pr(Y = True)
+        self.prob_Y = None
+        # probability dictionary
+        self.prob_dict = {}
+        self.prob_dict[True] = {}
+        self.prob_dict[False] = {}
 
     def fit(self, samples, labels):
         """
@@ -25,7 +31,15 @@ class NaiveBayes(object):
         labels : array-like
             the labels
         """
-        pass
+        for i, col in enumerate(samples.T):
+            al_pair = np.array([col, labels]).T
+            probs = self.likelihood(al_pair)
+            self.prob_dict[True][i] = probs[:, 0]
+            self.prob_dict[False][i] = probs[:, 1]
+
+        true_labels = labels[labels[:]]
+        self.prob_Y = len(true_labels) / float(len(labels))
+
 
     def predict(self, x):
         """
