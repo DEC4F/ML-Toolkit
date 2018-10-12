@@ -6,6 +6,8 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 
 import numpy as np
 import math
+from collections import Counter, defaultdict
+
 
 class NaiveBayes(object):
     """
@@ -61,3 +63,25 @@ class NaiveBayes(object):
         # generate evenly spaced list with n+1 values (n gaps/bins)
         bins = np.linspace(min(cont_attr)-1, max(cont_attr)+1, num=self.n_bins + 1)
         return np.digitize(cont_attr, bins)
+
+
+
+
+    def prior_probab(self, labels):
+        no_of_examples = len(labels)
+        prob = dict(Counter(labels))
+        for key in prob.keys():
+            prob[key] = prob[key] / float(no_of_examples)
+        return prob
+
+
+    def likelihood_attr(self, samples,labels):
+        likelihoods = {}
+        for label in np.unique(labels):
+            likelihoods[label] = defaultdict(list)
+            row_indices = np.where(labels == label)[0]
+            atr_subset = samples[row_indices, :]
+            for j in range(0, np.shape(atr_subset)[1]):
+                likelihoods[label][j] += list(atr_subset[:, j])
+                likelihoods[label][j] = prior_probab(likelihoods[label][j])
+        return likelihoods
