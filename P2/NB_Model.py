@@ -29,28 +29,6 @@ class NaiveBayes(object):
         """
         pass
 
-    def mean(self, numbers):
-        """
-        calculate the mean of the given attribute list
-        ----------
-        numbers : array-like
-            the numbers
-
-        """
-        return sum(numbers) / float(len(numbers))
-
-    def stdev(self, numbers):
-        """
-       calculate the standard deviation of the given attribute list
-       ----------
-       numbers : array-like
-           the numbers
-
-       """
-        avg = self.mean(numbers)
-        variance = sum([pow(x - avg, 2) for x in numbers]) / float(len(numbers) - 1)
-        return math.sqrt(variance)
-
     def predict(self, x):
         """
         predict the input instance's class label
@@ -69,7 +47,7 @@ class NaiveBayes(object):
             partition the range of the feature into n bins
         """
         # generate evenly spaced list with n+1 values (n gaps/bins)
-        bins = np.linspace(min(cont_attr), max(cont_attr), num=self.n_bins + 1)
+        bins = np.linspace(min(cont_attr)-1, max(cont_attr)+1, num=self.n_bins + 1)
         return np.digitize(cont_attr, bins)
 
 
