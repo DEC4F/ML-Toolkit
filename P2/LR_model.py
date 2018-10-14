@@ -5,20 +5,22 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
 import numpy as np
+import types
 
 class LogisticRegression(object):
     """
     a naive bayes model
     """
 
-    def __init__(self, n_bins, m_estimate,_lambda):
-        self.n_bins = n_bins
-        self.m_estimate = m_estimate
+    def __init__(self,lr,num_iter,_lambda):
+        self.bias = None
         self._lambda = _lambda
         self.weights = None
-        self.lr = 0.001
+        self.lr = lr
+        self.num_iter = num_iter
+        self.loss = None
 
-    def fit(self, samples, labels,num_iter = 10000):
+    def fit(self, samples, labels):
         """
         build a Logistic Regression  with input samples and labels
         ----------
@@ -27,14 +29,19 @@ class LogisticRegression(object):
         labels : array-like
             the labels
         """
+        self.bias = np.zeros(samples.shape[1])
         self.weights = np.zeros(samples.shape[1])
-        self.weights, num_iter = grad_desc(samples, labels, weights)
-
-        # params = np.dot(samples, self.weights)
-        # cond_likelihood = self.sigmoid(params)
-        # gradient = np.dot(samples.T, (cond_likelihood - labels )) / float(labels.size)
-        # self.weights += self.lr * gradient
-        # loss_log(cond_likelihood,labels)
+        for i in range(samples.shape[1]):
+            samples[:, i] = self.encode(samples[:, i])
+        labels = self.encode(labels)
+        cost = self.LR_likelihood(samples,labels)
+        while (self.num_iter):
+            old_cost = cost
+            self.weights = self.weights - (self.lr * self.log_gradient( samples, labels))
+            self.bias = self.bias - (self.lr * self.log_gradient(samples, labels))
+            cost = self.LR_likelihood(samples,labels)
+            self.loss = old_cost - cost
+            self.num_iter -= 1
 
 
     def predict(self, x):
@@ -46,24 +53,36 @@ class LogisticRegression(object):
             the sample data
         """
         pass
-    def loss_log(self,samples,weights,labels):
-        step1 = labels * np.log(self.sigmoid(samples,weights))
-        step2 = (1 - labels) * np.log(1 - cond_likelihood)
-        final = step1 + step2
-        return np.mean(final)
 
 
 
-    def log_gradient(self,weights, samples, labels):
+    def log_gradient(self, X, y):
         '''
         logistic gradient function
         '''
-        first_calc = self.sigmoid(samples,weights) - labels.reshape(samples.shape[0], -1)
-        final_calc = np.dot(first_calc.T, samples)
-        return final_calc
+        log_grad = np.dot(self.sigmoid(X) - y.reshape(X.shape[0], -1).T, X)
+        return log_grad
 
-    def sigmoid(self, samples,weights):
+    def LR_likelihood(self, samples, labels, _lambda=0.1):
+        m = len(labels)
+        h = self.sigmoid(samples)
+        reg = (_lambda / (2 * m)) * np.sum(self.weights ** 2)
+
+        return (1 / m) * (-labels.T.dot(np.log(h)) - (1 - labels).T.dot(np.log(1 - h))) + reg
+
+    def sigmoid(self,samples):
         '''
         logistic(sigmoid) function
         '''
-        return 1.0 / (1 + np.exp(-np.dot(samples, weights.T)))
+        x = np.array(-(np.dot(samples, self.weights.T + self.bias)), dtype=np.float32)
+        return 1.0 / (1 + np.exp(x))
+
+
+    def encode(self,samples):
+        if not isinstance(samples[0], (int, float)) or type(samples[0]) == types.BooleanType:
+            transdict = {}
+            for x in range(0, np.unique(samples).shape[0]):
+                transdict[np.unique(samples)[x]] = x
+            idx = np.nonzero(transdict.keys() == samples[:, None])[1]
+            samples = np.asarray(transdict.values())[idx]
+        return samples
