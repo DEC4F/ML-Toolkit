@@ -18,9 +18,9 @@ class LogisticRegression(object):
         self.weights = None
         self.lr = 0.001
 
-    def fit(self, samples, labels):
+    def fit(self, samples, labels,num_iter = 10000):
         """
-        build a naive bayes network with input samples and labels
+        build a Logistic Regression  with input samples and labels
         ----------
         samples : array-like
             the samples
@@ -28,10 +28,13 @@ class LogisticRegression(object):
             the labels
         """
         self.weights = np.zeros(samples.shape[1])
-        params = np.dot(samples, self.weights)
-        cond_likelihood = self.sigmoid(params)
-        gradient = np.dot(samples.T, (cond_likelihood - labels )) / float(labels.size)
-        self.weights += self.lr * gradient
+        self.weights, num_iter = grad_desc(samples, labels, weights)
+
+        # params = np.dot(samples, self.weights)
+        # cond_likelihood = self.sigmoid(params)
+        # gradient = np.dot(samples.T, (cond_likelihood - labels )) / float(labels.size)
+        # self.weights += self.lr * gradient
+        # loss_log(cond_likelihood,labels)
 
 
     def predict(self, x):
@@ -43,6 +46,24 @@ class LogisticRegression(object):
             the sample data
         """
         pass
+    def loss_log(self,samples,weights,labels):
+        step1 = labels * np.log(self.sigmoid(samples,weights))
+        step2 = (1 - labels) * np.log(1 - cond_likelihood)
+        final = step1 + step2
+        return np.mean(final)
 
-    def sigmoid(self, z):
-        return 1 / (1 + np.exp(-z))
+
+
+    def log_gradient(self,weights, samples, labels):
+        '''
+        logistic gradient function
+        '''
+        first_calc = self.sigmoid(samples,weights) - labels.reshape(samples.shape[0], -1)
+        final_calc = np.dot(first_calc.T, samples)
+        return final_calc
+
+    def sigmoid(self, samples,weights):
+        '''
+        logistic(sigmoid) function
+        '''
+        return 1.0 / (1 + np.exp(-np.dot(samples, weights.T)))
