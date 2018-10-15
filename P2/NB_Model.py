@@ -93,6 +93,8 @@ class NaiveBayes(object):
             the attribute and label pair
         _v : int
             number of unique value of input attribute
+        return : array-like
+            array of conditional probabilities with shape [_v, 2]
         """
         # unique value and its corresponding conditional probability
         lh_array = np.zeros((_v, 2))
