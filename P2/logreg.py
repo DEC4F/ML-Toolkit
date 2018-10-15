@@ -13,6 +13,8 @@ def main():
     file_path, use_full_sample, lbd = sys.argv[1:4]
     # parse args
     [use_full_sample, lbd] = [int(use_full_sample), int(lbd)]
+    clf = LogisticRegression(0.01, 10000, 1)
+    clf.fit(samples, labels)
 
 if __name__ == '__main__':
     main()
