@@ -14,8 +14,10 @@ class NaiveBayes(object):
     def __init__(self, n_bins, m_estimate):
         self.n_bins = n_bins
         self.m_estimate = m_estimate
+        # store bins
+        self.bins = {}
         # Pr(Y = True)
-        self.prob_y = None
+        self.prob_y = -1
         # probability dictionary
         self.prob_dict = {}
         self.prob_dict[True] = {}
@@ -30,45 +32,68 @@ class NaiveBayes(object):
         labels : array-like
             the labels
         """
-        for i, col in enumerate(samples.T):
-            al_pair = np.array([col, labels]).T
-            probs = self.likelihood(al_pair)
-            self.prob_dict[True][i] = probs[:, 0]
-            self.prob_dict[False][i] = probs[:, 1]
+        for attr_idx, attr in enumerate(samples.T):
+            if isinstance(attr[0], float):
+                self.bins[attr_idx] = np.linspace(min(attr)-1, max(attr)+1, num=self.n_bins + 1)
+                attr = np.digitize(attr.astype(np.float64), self.bins[attr_idx])
+            else:
+                self.bins[attr_idx] = list(np.unique(attr))
+            al_pair = np.array([attr, labels]).T
+            probs = self.likelihood(al_pair, len(self.bins[attr_idx]))
+            self.prob_dict[True][attr_idx] = probs[:, 0]
+            self.prob_dict[False][attr_idx] = probs[:, 1]
+        self.prob_y = sum(labels) / float(len(labels))
 
-        true_labels = labels[labels[:]]
-        self.prob_y = len(true_labels) / float(len(labels))
-
-    def predict(self, x):
+    def predict(self, _x):
         """
         predict the input instance's class label
         can only predict one sample at a time
         ----------
-        X : array-like
+        _x : array-like
             the sample data
         """
-        pass
+        if self.prob_y == -1:
+            raise Exception("Fit the data before making prediction")
+        p_pos, p_neg = [1, 1]
+        for attr_idx, val in enumerate(_x):
+            if isinstance(val, float):
+                bin_idx = self.locate_idx(val, self.bins[attr_idx]) - 1
+            else:
+                bin_idx = list(self.bins[attr_idx]).index(val)
+            p_pos *= self.prob_dict[True][attr_idx][bin_idx] * self.prob_y
+            p_neg *= self.prob_dict[False][attr_idx][bin_idx] * (1 - self.prob_y)
+        return p_pos >= p_neg
 
-    def discretize(self, cont_attr):
+    def locate_idx(self, val, sorted_bin):
         """
-        cont_attr : array-like
-            continuous attribute (column of values) to be discretized
-        n_bins : int
-            partition the range of the feature into n bins
+        find input value's corresponding bin index in the sorted bin list
+        ----------
+        val : int
+            the value to be looked up
+        sorted_bin : array-like
+            the bin list
         """
-        # generate evenly spaced list with n+1 values (n gaps/bins)
-        bins = np.linspace(min(cont_attr)-1, max(cont_attr)+1, num=self.n_bins + 1)
-        return np.digitize(cont_attr, bins)
+        # return index of last bin if val >= upper bound
+        if val >= max(sorted_bin):
+            return len(sorted_bin) - 1
+        # return index of first bin if val < lower bound
+        elif val < min(sorted_bin):
+            return 1
+        # return corresponding bin index if val is between in [lower bound, upper bound)
+        else:
+            for i, curr_val in enumerate(sorted_bin[:-1]):
+                if val >= curr_val and val < sorted_bin[i+1]:
+                    return i + 1
 
-    def likelihood(self, al_pair):
+    def likelihood(self, al_pair, _v):
         """
         calculates the likelihood of attribute taking on a unique value given its label
         ----------
         al_pair : array-like
             the attribute and label pair
+        _v : int
+            number of unique value of input attribute
         """
-        # number of unique value of input attribute
-        _v = len(np.unique(al_pair[:, 0]))
         # unique value and its corresponding conditional probability
         lh_array = np.zeros((_v, 2))
         for idx, uniq_val in enumerate(np.unique(al_pair[:, 0])):
@@ -76,7 +101,7 @@ class NaiveBayes(object):
             lh_array[idx, 1] = self.compute_lh(al_pair[al_pair[:, 1] == False], uniq_val, _v)
         return lh_array
 
-    def compute_lh(self, al_pure_pair, xi, v):
+    def compute_lh(self, al_pure_pair, x_i, _v):
         """
         computes the likelihood of attribute taking on xi as value given its label
         ----------
@@ -84,7 +109,7 @@ class NaiveBayes(object):
             the attribute and label pair
         """
         # (number of examples with Xi = xi and Y = y) + mp
-        numerator = len(al_pure_pair[al_pure_pair[:, 0] == xi]) + self.m_estimate/float(v)
+        numerator = len(al_pure_pair[al_pure_pair[:, 0] == x_i]) + self.m_estimate/float(_v)
         # (number of examples with Y = y) + m
         denominator = len(al_pure_pair) + self.m_estimate
         return numerator / float(denominator)
