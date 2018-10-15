@@ -16,6 +16,7 @@ class LogisticRegression(object):
         self.m_estimate = m_estimate
         self._lambda = _lambda
         self.weights = None
+        self.bias = None
         self.lr = 0.001
 
     def fit(self, samples, labels,num_iter = 10000):
@@ -67,3 +68,23 @@ class LogisticRegression(object):
         logistic(sigmoid) function
         '''
         return 1.0 / (1 + np.exp(-np.dot(samples, weights.T)))
+
+    def sigm(self, attrs):
+        return 1.0 / (1 + np.exp(-np.dot(attrs, self.weights) + self.bias))
+
+    def gradient(self, samples, labels):
+        """
+        :param samples:
+        :param labels:
+        :return:
+        """
+        dW = np.zeros(samples.shape[1])
+        dB = 0
+        for i, X in enumerate(samples):
+            sigm = self.sigmoid(X)
+            dW += -sigm * X
+            dB += sigm
+            if labels[i] == False:
+                dX += X
+                dB += 1
+        dW += self._lambda * self.weights

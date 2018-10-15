@@ -66,12 +66,15 @@ class NaiveBayes(object):
         ----------
         al_pair : array-like
             the attribute and label pair
+        return : array-like
+            array of conditional probabilities with shape [_v, 2]
         """
+        values = np.unique(al_pair[:, 0])
         # number of unique value of input attribute
-        _v = len(np.unique(al_pair[:, 0]))
+        _v = len(values)
         # unique value and its corresponding conditional probability
         lh_array = np.zeros((_v, 2))
-        for idx, uniq_val in enumerate(np.unique(al_pair[:, 0])):
+        for idx, uniq_val in enumerate(values):
             lh_array[idx, 0] = self.compute_lh(al_pair[al_pair[:, 1] == True], uniq_val, _v)
             lh_array[idx, 1] = self.compute_lh(al_pair[al_pair[:, 1] == False], uniq_val, _v)
         return lh_array
