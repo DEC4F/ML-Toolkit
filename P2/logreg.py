@@ -4,6 +4,7 @@ This is an implementation of logistic regression algorithm
 Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 import sys
+from LR_Model import LogisticRegression
 
 def main():
     """
