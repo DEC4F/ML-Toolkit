@@ -43,6 +43,21 @@ class LogisticRegression(object):
             self.loss = old_cost - cost
             self.num_iter -= 1
 
+    def my_fit(self, samples, labels):
+        """
+        build a Logistic Regression  with input samples and labels
+        ----------
+        samples : array-like
+            the samples
+        labels : array-like
+            the labels
+        """
+        self.weights = np.zeros(samples.shape[1])
+        self.bias = 0
+        for i in range(self.num_iter):
+            gradient_weights, gradient_bias = self.gradient(samples, labels)
+            self.weights -= self.learning_rate * gradient_weights
+            self.bias -= self.learning_rate * gradient_bias
 
     def predict(self, x):
         """
