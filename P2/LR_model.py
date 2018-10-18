@@ -5,7 +5,6 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
 import numpy as np
-import types
 
 class LogisticRegression(object):
     """
@@ -15,10 +14,11 @@ class LogisticRegression(object):
     def __init__(self, learning_rate, num_iter, _lambda):
         self._lambda = _lambda
         self.weights = None
-        self.bias = None
+        self.bias = 0.0
         self.learning_rate = learning_rate
         self.num_iter = num_iter
         self.loss = None
+        self.attr_dict={}
 
     def fit(self, samples, labels):
         """
@@ -30,7 +30,9 @@ class LogisticRegression(object):
             the labels
         """
         self.weights = np.zeros(samples.shape[1])
-        self.bias = 0
+        for i in range(samples.shape[1]):
+            if not isinstance(samples[:,i][0], float):
+                samples[:, i], self.attr_dict[i] = self.encode(samples[:, i])
         for i in range(self.num_iter):
             gradient_weights, gradient_bias = self.gradient(samples, labels)
             self.weights -= self.learning_rate * gradient_weights
@@ -44,13 +46,19 @@ class LogisticRegression(object):
         X : array-like
             the sample data
         """
-        pass
+        encoded_x = np.zeros(len(x))
+        for i, val in enumerate(x):
+            if not isinstance(val, float):
+                encoded_x[i] = self.attr_dict[i][val]
+        print encoded_x
+        log_probab = np.dot(self.weights , encoded_x) + self.bias
+        return log_probab > 0
 
     def sigmoid(self, samples):
         '''
         logistic(sigmoid) function
         '''
-        x = np.array(-(np.dot(samples, self.weights) + self.bias), dtype=np.float32)
+        x = np.array(-(np.dot(self.weights, samples) + self.bias), dtype=np.float32)
         return 1.0 / (1 + np.exp(x))
 
     def encode(self, attrs):
@@ -63,8 +71,8 @@ class LogisticRegression(object):
         transdict = {}
         unique_vals = np.unique(attrs)
         for i, val in enumerate(unique_vals):
-            transdict[val] = i
-        return list(map(lambda x: transdict[x], attrs))
+            transdict[val] = float(i)
+        return list(map(lambda x: transdict[x], attrs)),transdict
 
     def gradient(self, samples, labels):
         """
@@ -79,7 +87,7 @@ class LogisticRegression(object):
         """
         derivative_of_weights = np.zeros(samples.shape[1])
         derivative_of_bias = 0
-        for i, X in enumerate(samples):
+        for i, X in enumerate(samples.astype(np.float64)):
             cond_likelihood = self.sigmoid(X)
             if labels[i] == True:
                 derivative_of_weights += (1 - cond_likelihood) * X
