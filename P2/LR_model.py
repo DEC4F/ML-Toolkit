@@ -12,12 +12,11 @@ class LogisticRegression(object):
     a naive bayes model
     """
 
-    def __init__(self,lr,num_iter,_lambda):
-        self.bias = None
+    def __init__(self, learning_rate, num_iter, _lambda):
         self._lambda = _lambda
         self.weights = None
         self.bias = None
-        self.lr = lr
+        self.learning_rate = learning_rate
         self.num_iter = num_iter
         self.loss = None
 
@@ -88,22 +87,31 @@ class LogisticRegression(object):
             samples = np.asarray(transdict.values())[idx]
         return samples
 
-    def sigm(self, attrs):
-        return 1.0 / (1 + np.exp(-np.dot(attrs, self.weights) + self.bias))
+    def conditional_log_likelihood(self, attrs):
+        # 1 / e^{ -(W * X + b)}
+        return 1.0 / (1 + np.exp(-(np.dot(attrs, self.weights) + self.bias)))
 
     def gradient(self, samples, labels):
         """
-        :param samples:
-        :param labels:
-        :return:
+        :param samples: array-like
+            Xs
+        :param labels: array-like
+            Ys
+        :return: derivative_of_weights : array-like
+            vector of weights' derivative
+                derivative_of_bias : float
+            derivative of bias
         """
-        dW = np.zeros(samples.shape[1])
-        dB = 0
+        derivative_of_weights = np.zeros(samples.shape[1])
+        derivative_of_bias = 0
         for i, X in enumerate(samples):
-            sigm = self.sigmoid(X)
-            dW += -sigm * X
-            dB += sigm
-            if labels[i] == False:
-                dX += X
-                dB += 1
-        dW += self._lambda * self.weights
+            cond_log_likelihood = self.conditional_log_likelihood(X)
+            if labels[i] == True:
+                derivative_of_weights += (1 - cond_log_likelihood) * X
+                derivative_of_bias += 1 - cond_log_likelihood
+            else:
+                derivative_of_weights += cond_log_likelihood * X
+                derivative_of_bias += cond_log_likelihood
+
+        derivative_of_weights += self._lambda * self.weights
+        return derivative_of_weights, derivative_of_bias
