@@ -29,16 +29,10 @@ class LogisticRegression(object):
         labels : array-like
             the labels
         """
-        samples = samples.T
-        for i, attrs in enumerate(samples):
-            if not isinstance(attrs[0], (int, float)):
-                samples[i] = self.encode(attrs)
-        samples = samples.T
-
-        self.weights = np.zeros(samples.shape[1])
         for i in range(samples.shape[1]):
             if not isinstance(samples[:,i][0], float):
                 samples[:, i], self.attr_dict[i] = self.encode(samples[:, i])
+
         for i in range(self.num_iter):
             gradient_weights, gradient_bias = self.gradient(samples, labels)
             self.weights -= self.learning_rate * gradient_weights
@@ -56,7 +50,7 @@ class LogisticRegression(object):
         for i, val in enumerate(x):
             if not isinstance(val, float):
                 encoded_x[i] = self.attr_dict[i][val]
-        print encoded_x
+        print(encoded_x)
         log_probab = np.dot(self.weights , encoded_x) + self.bias
         return log_probab > 0
 
