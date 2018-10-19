@@ -29,6 +29,12 @@ class LogisticRegression(object):
         labels : array-like
             the labels
         """
+        samples = samples.T
+        for i, attrs in enumerate(samples):
+            if not isinstance(attrs[0], (int, float)):
+                samples[i] = self.encode(attrs)
+        samples = samples.T
+
         self.weights = np.zeros(samples.shape[1])
         self.bias = 0
         for i in range(self.num_iter):
