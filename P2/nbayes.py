@@ -43,15 +43,6 @@ def get_dataset(file_path):
     raw_parsed = mldata.parse_c45(file_path.split(os.sep)[-1], file_path)
     return np.array(raw_parsed, dtype=object)
 
-def get_dataset(file_path):
-    """
-    parse the dataset stored in the input file path
-    ----------
-    file_path : String
-        the path to the dataset
-    """
-    raw_parsed = mldata.parse_c45(file_path.split(os.sep)[-1], file_path)
-    return np.array(raw_parsed, dtype=object)
 
 def precision(labels, predictions):
     """
