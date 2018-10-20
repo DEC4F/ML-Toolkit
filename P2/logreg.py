@@ -33,7 +33,9 @@ def main():
         clf.fit(samples, labels)
     else:
         avg_vals, std = k_fold_cv(clf, examples, K_FOLD)
-        print ("Accuracy:  {:10f} {:10f} \n Precision: {:10f} {:10f} \n Recall: {:13f} {:10f}".format(avg_vals[0], std[0], avg_vals[1], std[1],avg_vals[2], std[2]))
+        print ("Accuracy:  {:10f} {:10f} \n"
+               "Precision: {:10f} {:10f} \n"
+               "Recall: {:13f} {:10f}".format(avg_vals[0], std[0], avg_vals[1], std[1],avg_vals[2], std[2]))
 
 
 def get_dataset(file_path):
