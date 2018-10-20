@@ -10,7 +10,7 @@ import mldata
 from NB_Model import NaiveBayes
 from evaluation_lib import k_fold_cv
 
-K_FOLD = 2
+K_FOLD = 5
 
 def main():
     """
