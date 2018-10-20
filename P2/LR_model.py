@@ -94,8 +94,8 @@ class LogisticRegression(object):
         for i, X in enumerate(samples.astype(np.float64)):
             cond_likelihood = self.sigmoid(X)
             if labels[i] == True:
-                derivative_of_weights += (1 - cond_likelihood) * X
-                derivative_of_bias += 1 - cond_likelihood
+                derivative_of_weights += (cond_likelihood - 1) * X
+                derivative_of_bias += cond_likelihood - 1
             else:
                 derivative_of_weights += cond_likelihood * X
                 derivative_of_bias += cond_likelihood

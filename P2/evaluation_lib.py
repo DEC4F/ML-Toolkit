@@ -18,7 +18,7 @@ def precision(y_true, y_pred):
     if sum(y_pred) == 0:
         return 1.0
     # number of true positive / number of predicted positive
-    return sum([i and j for i, j in zip(y_true, y_pred)]) / sum(y_pred)
+    return  sum([i == j for i,j in zip(y_true,y_pred) if j==True])/float(sum(y_pred))
 
 def recall(y_true, y_pred):
     """
@@ -32,7 +32,7 @@ def recall(y_true, y_pred):
     if sum(y_true) == 0:
         return 1.0
     # number of true positive / number of factual true labels
-    return sum([i and j for i, j in zip(y_true, y_pred)]) / sum(y_true)
+    return sum([i == j for i, j in zip(y_true, y_pred) if i == True]) / float(sum(y_true))
 
 def accuracy(y_true, y_pred):
     """
@@ -50,6 +50,21 @@ def accuracy(y_true, y_pred):
             count += 1
     return count / float(len(y_true))
 
+def specificity(y_true, y_pred):
+    """
+    calculate the specificity of this prediction
+    ----------
+    y_true : array-like
+          true class labels
+    y_pred : array-like
+          predicted class labels
+    """
+
+    if y_true.count(0) == 0:
+        return 1.0
+
+    return sum([i == j for i,j in zip(y_true,y_pred) if i==False]) / float(y_true.count(0))
+
 def k_fold_cv(model, data, k):
     """
     perform k fold cross validation on the model
@@ -65,8 +80,7 @@ def k_fold_cv(model, data, k):
     acc = []
     prcisn = []
     rcll = []
-    std =[]
-    avg_vals = []
+
     np.random.seed(12345)
     np.random.shuffle(data)
 
