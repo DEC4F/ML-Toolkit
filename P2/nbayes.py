@@ -17,7 +17,7 @@ def main():
     run the naive bayes network with given command line input
     ----------
     """
-    file_path, use_full_sample, n_bins, m_estimate = sys.argv[1:5]
+    file_path, use_full_sample, n_bins, m_estimate = sys.argv[1:4]
     # parse args
     [use_full_sample, n_bins, m_estimate] = [int(use_full_sample), int(n_bins), int(m_estimate)]
     examples = get_dataset(file_path)
