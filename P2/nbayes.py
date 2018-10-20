@@ -27,7 +27,11 @@ def main():
         labels = examples[:, -1]
         n_b.fit(samples, labels)
     else:
-        print(k_fold_cv(n_b, examples, K_FOLD))
+        avg_vals, std = k_fold_cv(n_b, examples, K_FOLD)
+        print ("Accuracy:  {:10f} {:10f}\nPrecision: {:10f} {:10f}\nRecall: {:13f} {:10f}".format(avg_vals[0], std[0],
+                                                                                                  avg_vals[1], std[1],
+                                                                                                  avg_vals[2], std[2]))
+
 
 def get_dataset(file_path):
     """
@@ -38,6 +42,27 @@ def get_dataset(file_path):
     """
     raw_parsed = mldata.parse_c45(file_path.split(os.sep)[-1], file_path)
     return np.array(raw_parsed, dtype=object)
+
+
+def precision(labels, predictions):
+    """
+    What fraction of the examples predicted positive are actually positive?
+    """
+    if sum(predictions) == 0:
+        return 1.0
+    #                  True              Positives / All positive predictions
+    return sum(labels and predictions) / sum(predictions)
+
+
+def recall(labels, predictions):
+    """
+    What fraction of the positive examples were predicted positive?
+    """
+    if sum(labels) == 0:
+        return 1.0
+    #                 True               Positives  / All positive labels
+    return sum(labels and predictions) / sum(labels)
+
 
 def accuracy(y_true, y_pred):
     """
@@ -68,6 +93,10 @@ def k_fold_cv(model, data, k):
     """
     data_split = np.array_split(data, k)
     acc = []
+    prcisn = []
+    rcll = []
+    std =[]
+    avg_vals = []
     for i in range(0, k):
         train_data = np.delete(data_split, (i), axis=0)
         train_data = np.concatenate(train_data)
@@ -79,7 +108,14 @@ def k_fold_cv(model, data, k):
         model.fit(train_samples, train_targets)
         pred = [bool(model.predict(test_samples[j, :])) for j in range(test_samples.shape[0])]
         acc.append(accuracy(test_targets, pred))
-    return sum(acc) / float(k)
+        prcisn.append(precision(test_targets, pred))
+        rcll.append(recall(test_targets, pred))
+    avg_vals = [sum(acc) / float(k) , sum(prcisn) / float(k) , sum(rcll) / float(k)]
+    std = [np.std(acc) , np.std(prcisn) , np.std(rcll)]
+
+
+    return avg_vals, std
+
 
 if __name__ == '__main__':
     main()
