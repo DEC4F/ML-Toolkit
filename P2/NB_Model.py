@@ -66,7 +66,9 @@ class NaiveBayes(object):
                 bin_idx = list(self.bins[attr_idx]).index(val)
             p_pos *= self.prob_dict[True][attr_idx][bin_idx]
             p_neg *= self.prob_dict[False][attr_idx][bin_idx]
-        return p_pos >= p_neg
+
+        confidence = p_pos / (p_pos + p_neg)
+        return bool(p_pos >= p_neg), confidence
 
     def locate_idx(self, val, sorted_bin):
         """

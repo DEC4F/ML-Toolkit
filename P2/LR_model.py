@@ -60,7 +60,8 @@ class LogisticRegression(object):
                 encoded_x[i] = val
         # print(encoded_x)
         log_probab = np.dot(self.weights , encoded_x) + self.bias
-        return log_probab > 0
+        confidence = self.sigmoid(encoded_x)
+        return bool(log_probab > 0), confidence
 
     def sigmoid(self, samples):
         '''

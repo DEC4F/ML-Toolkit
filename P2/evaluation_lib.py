@@ -81,6 +81,9 @@ def k_fold_cv(model, data, k):
     prcisn = []
     rcll = []
 
+    # [confidence, true_label] with shape of (n, 2)
+    conf_label_pair = np.array([[], []]).T
+
     np.random.seed(12345)
     np.random.shuffle(data)
 
@@ -92,11 +95,38 @@ def k_fold_cv(model, data, k):
         train_targets = train_data[:, -1]
         test_samples = test_data[:, 1:-1]
         test_targets = [bool(x) for x in test_data[:, -1]]
+
         model.fit(train_samples, train_targets)
-        pred = [bool(model.predict(test_samples[j, :])) for j in range(test_samples.shape[0])]
+
+        result = np.array([model.predict(test_samples[j, :]) for j in range(test_samples.shape[0])])
+        pred = result[:, 0]
+        # [confidence, true_labels]
+        new_pair = np.array([result[:, 1], test_targets]).T
+        conf_label_pair = np.append(conf_label_pair, new_pair, axis=0)
         acc.append(accuracy(test_targets, pred))
         prcisn.append(precision(test_targets, pred))
         rcll.append(recall(test_targets, pred))
+
     avg_vals = [sum(acc) / float(k) , sum(prcisn) / float(k) , sum(rcll) / float(k)]
     std = [np.std(acc) , np.std(prcisn) , np.std(rcll)]
-    return avg_vals, std
+
+    # sort by confidence
+    conf_label_pair = conf_label_pair[conf_label_pair[:, 0].argsort()]
+    num_true = sum(conf_label_pair[:, 1])
+    unique_conf = np.unique(conf_label_pair[:, 0])
+    # print(conf_label_pair.shape)
+    # print(unique_conf.shape)
+    old_tp_rate = 0
+    old_fp_rate = 0
+    area_under_roc = 0
+    for i, conf in enumerate(unique_conf):
+        # print(conf)
+        pred_true = conf_label_pair[conf_label_pair[:, 0] >= conf]
+        tp_rate = sum(pred_true[:, 1] == True) / num_true
+        fp_rate = sum(pred_true[:, 1] == False) / num_true
+        if tp_rate > old_tp_rate and fp_rate > old_fp_rate:
+            area_under_roc += (fp_rate - old_fp_rate) * tp_rate
+            old_tp_rate = tp_rate
+            old_fp_rate = fp_rate
+
+    return avg_vals, std, area_under_roc
