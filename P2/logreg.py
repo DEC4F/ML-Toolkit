@@ -8,7 +8,7 @@ import os
 import numpy as np
 import mldata
 from evaluation_lib import k_fold_cv
-from LR_model import LogisticRegression
+from LR_Model import LogisticRegression
 
 K_FOLD = 5
 
