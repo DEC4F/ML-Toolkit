@@ -18,7 +18,7 @@ def precision(y_true, y_pred):
     if sum(y_pred) == 0:
         return 1.0
     # number of true positive / number of predicted positive
-    return sum(y_true and y_pred) / sum(y_pred)
+    return sum([i and j for i, j in zip(y_true, y_pred)]) / sum(y_pred)
 
 def recall(y_true, y_pred):
     """
@@ -32,7 +32,7 @@ def recall(y_true, y_pred):
     if sum(y_true) == 0:
         return 1.0
     # number of true positive / number of factual true labels
-    return sum(y_true and y_pred) / sum(y_true)
+    return sum([i and j for i, j in zip(y_true, y_pred)]) / sum(y_true)
 
 def accuracy(y_true, y_pred):
     """

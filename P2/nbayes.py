@@ -28,7 +28,9 @@ def main():
         n_b.fit(samples, labels)
     else:
         avg_vals, std = k_fold_cv(n_b, examples, K_FOLD)
-        print ("Accuracy:  {:10f} {:10f}\nPrecision: {:10f} {:10f}\nRecall: {:13f} {:10f}".format(avg_vals[0], std[0], avg_vals[1], std[1], avg_vals[2], std[2]))
+        print (("Accuracy: %.3f %.3f " + os.linesep + 
+                "Precision: %.3f %.3f " + os.linesep + 
+                "Recall: %.3f %.3f") % (avg_vals[0], std[0], avg_vals[1], std[1], avg_vals[2], std[2]))
 
 def get_dataset(file_path):
     """
