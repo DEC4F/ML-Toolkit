@@ -32,8 +32,10 @@ class LogisticRegression(object):
         """
         for i in range(samples.shape[1]):
             if not isinstance(samples[:,i][0], float):
+                # print("Attribute", i, "encoded")
                 samples[:, i], self.attr_dict[i] = self.encode(samples[:, i])
 
+        print("Fitting...")
         # self.weights = np.zeros(len(samples[0]))
         self.weights = truncnorm.rvs(-1, 1, loc=0, scale=1, size=samples.shape[1])
         self.bias = 0
@@ -54,7 +56,9 @@ class LogisticRegression(object):
         for i, val in enumerate(x):
             if not isinstance(val, float):
                 encoded_x[i] = self.attr_dict[i][val]
-        print(encoded_x)
+            else:
+                encoded_x[i] = val
+        # print(encoded_x)
         log_probab = np.dot(self.weights , encoded_x) + self.bias
         return log_probab > 0
 
