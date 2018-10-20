@@ -22,7 +22,7 @@ def main():
     num_iter = number of iterations used for training
     _lambda = penalty variable
     """
-    file_path, use_full_sample, lr, num_iter, _lambda = sys.argv[1:5]
+    file_path, use_full_sample, lr, num_iter, _lambda = sys.argv[1:6]
     # parse args
     [use_full_sample, num_iter,lr,_lambda] = [int(use_full_sample), int(num_iter), float(lr), float(_lambda)]
     clf = LogisticRegression(lr, num_iter, _lambda)

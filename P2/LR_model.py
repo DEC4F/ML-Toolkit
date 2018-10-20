@@ -1,6 +1,6 @@
 #!usr/bin/python3
 """
-This is an implementation of naive Bayes algorithm
+This is an implementation of logistic regression algorithm
 Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
@@ -8,7 +8,7 @@ import numpy as np
 
 class LogisticRegression(object):
     """
-    a naive bayes model
+    a logistic regression model
     """
 
     def __init__(self, learning_rate, num_iter, _lambda):
@@ -33,6 +33,8 @@ class LogisticRegression(object):
             if not isinstance(samples[:,i][0], float):
                 samples[:, i], self.attr_dict[i] = self.encode(samples[:, i])
 
+        self.weights = np.zeros(len(samples[0]))
+        self.bias = 0
         for i in range(self.num_iter):
             gradient_weights, gradient_bias = self.gradient(samples, labels)
             self.weights -= self.learning_rate * gradient_weights
@@ -58,7 +60,7 @@ class LogisticRegression(object):
         '''
         logistic(sigmoid) function
         '''
-        x = np.array(-(np.dot(self.weights, samples) + self.bias), dtype=np.float32)
+        x = -(np.dot(self.weights, samples) + self.bias)
         return 1.0 / (1 + np.exp(x))
 
     def encode(self, attrs):
