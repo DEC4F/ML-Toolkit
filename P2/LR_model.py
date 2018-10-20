@@ -5,6 +5,7 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
 import numpy as np
+from scipy.stats import truncnorm
 
 class LogisticRegression(object):
     """
@@ -33,7 +34,8 @@ class LogisticRegression(object):
             if not isinstance(samples[:,i][0], float):
                 samples[:, i], self.attr_dict[i] = self.encode(samples[:, i])
 
-        self.weights = np.zeros(len(samples[0]))
+        # self.weights = np.zeros(len(samples[0]))
+        self.weights = truncnorm.rvs(-1, 1, loc=0, scale=1, size=samples.shape[1])
         self.bias = 0
         for i in range(self.num_iter):
             gradient_weights, gradient_bias = self.gradient(samples, labels)
