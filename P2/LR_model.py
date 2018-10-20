@@ -33,7 +33,12 @@ class LogisticRegression(object):
             if not isinstance(samples[:,i][0], float):
                 samples[:, i], self.attr_dict[i] = self.encode(samples[:, i])
 
+        print("encoding complete")
+
+        self.weights = np.zeros(len(samples[0]))
+        self.bias = 0
         for i in range(self.num_iter):
+            print(i)
             gradient_weights, gradient_bias = self.gradient(samples, labels)
             self.weights -= self.learning_rate * gradient_weights
             self.bias -= self.learning_rate * gradient_bias
@@ -58,7 +63,7 @@ class LogisticRegression(object):
         '''
         logistic(sigmoid) function
         '''
-        x = np.array(-(np.dot(self.weights, samples) + self.bias), dtype=np.float32)
+        x = -(np.dot(self.weights, samples) + self.bias)
         return 1.0 / (1 + np.exp(x))
 
     def encode(self, attrs):
