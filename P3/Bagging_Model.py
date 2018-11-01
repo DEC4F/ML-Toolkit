@@ -13,7 +13,7 @@ class Bagging(object):
 
     def __init__(self, base_classifier, n_iter):
         self.n_iter = n_iter
-        self.base_classifier = base_classifier
+        self.classifiers = [base_classifier]*n_iter
 
     def ensemble_fit(self, samples, labels):
         """
@@ -27,7 +27,10 @@ class Bagging(object):
         y : array-like, shape = [n_samples]
             The target values
         """
-        pass
+        
+        for i in self.n_iters:
+            new_samples , new_targets = self.random_sample(samples,labels)
+            self.classifiers[i].fit(new_samples, new_targets)
 
     def ensemble_predict(self, sample):
         """
@@ -41,4 +44,26 @@ class Bagging(object):
         y : array of shape = [n_samples]
             The predicted classes.
         """
-        pass
+        predictions = []
+        for j in range(sample.shape[0]):
+            pred = []
+            for cla in self.classifiers:
+                pred.append(bool(cla.predict(sample[j, :])))
+            predictions.append(sum(pred)/len(pred) >= 0.5)
+        return predictions
+        
+
+    def random_samples(self,samples,labels, ratio=1.0):
+    """
+    Generates and returns a randomised sample dataset same
+    as the size of the initial one and 
+    with replacemnet
+    """
+    rand_sample = list()
+    rand_label = list()
+    n_sample = round(len(samples) * ratio)
+    while len(rand_sample) < n_sample:
+        index = randrange(len(rand_sample))
+        rand_sample.append(samples[index])
+        rand_label.append(labels[index])
+    return np.array(rand_sample),np.array(rand_label)
