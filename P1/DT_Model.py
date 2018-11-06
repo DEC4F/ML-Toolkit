@@ -144,6 +144,8 @@ class ID3(object):
                 best_symbol = symbol
         return best_ig, best_symbol
 
+    # def entropoy_discrete_part(self, ):
+
     def ig_discrete(self, attr, symbol, labels):
         """
         calculate the IG of the input symbol in a discrete attribute
@@ -187,7 +189,7 @@ class ID3(object):
         og_ent = self.entropy_of(sorted_label)
         best_ig = 0.0
         for i in changed_idx[1:]:
-            curr_ig = og_ent - self.entropy_cont_sorted(sorted_label, i)
+            curr_ig = og_ent - self.entropy_cont_part(sorted_label, i)
             part_val = (sorted_attr[i] + sorted_attr[i-1])/2
 
             # Finding the maximum information gain
@@ -196,7 +198,7 @@ class ID3(object):
                 best_partition = part_val
         return best_ig, best_partition
 
-    def entropy_cont_sorted(self, sorted_labels, part_idx):
+    def entropy_cont_part(self, sorted_labels, part_idx):
         """
         :param sorted_labels:  array-like
             sorted according to the continuous attribute under consideration
@@ -287,15 +289,17 @@ class ID3(object):
         sorted_label = sorted_xy_pair[:, 1]
         # list of the indexes of samples where class label changed
         changed_idx = np.where(sorted_xy_pair[:, 1] != np.roll(sorted_xy_pair[:, 1], 1))[0]
+
+        og_ent = self.entropy_of(sorted_label)
         best_gr = 0.0
         for i in changed_idx[1:]:
-            part_val = (sorted_xy_pair[:, 0][i] + sorted_xy_pair[:, 0][i - 1]) / 2
-            curr_ig = self.ig_cont(sorted_attr, part_val, sorted_label)
+            part_val = (sorted_attr[i] + sorted_attr[i - 1]) / 2
+            curr_ig = og_ent - self.entropy_cont_part(sorted_label, i)
             curr_entrp = self.entropy_of_cont(sorted_attr, part_val)
             if curr_entrp == 0:
                 curr_gr = 0.0
             else:
-                curr_gr = curr_ig/float(curr_entrp)
+                curr_gr = curr_ig / float(curr_entrp)
             # Finding the maximum information gain
             if best_gr <= curr_gr:
                 best_gr = curr_gr
