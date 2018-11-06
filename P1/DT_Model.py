@@ -179,13 +179,8 @@ class ID3(object):
         labels : array-like
             the class label column
         """
-        cont_xy_pair = np.array([attr, labels]).T
-        # Sort the attribute label ascendingly
-        sorted_xy_pair = cont_xy_pair[cont_xy_pair[:, 0].argsort(kind='mergesort')]
-        sorted_attr = sorted_xy_pair[:, 0]
-        sorted_label = sorted_xy_pair[:, 1]
-        # list of the indexes of samples where class label changed
-        changed_idx = np.where(sorted_xy_pair[:, 1] != np.roll(sorted_xy_pair[:, 1], 1))[0]
+        sorted_attr, sorted_label, changed_idx = self.find_change_samples(attr, labels)
+
         og_ent = self.entropy_of(sorted_label)
         best_ig = 0.0
         for i in changed_idx[1:]:
@@ -282,13 +277,7 @@ class ID3(object):
         labels : array-like
             the class label column
         """
-        cont_xy_pair = np.array([attr, labels]).T
-        # Sort the attribute label ascendingly
-        sorted_xy_pair = cont_xy_pair[cont_xy_pair[:, 0].argsort(kind='mergesort')]
-        sorted_attr = sorted_xy_pair[:, 0]
-        sorted_label = sorted_xy_pair[:, 1]
-        # list of the indexes of samples where class label changed
-        changed_idx = np.where(sorted_xy_pair[:, 1] != np.roll(sorted_xy_pair[:, 1], 1))[0]
+        sorted_attr, sorted_label, changed_idx = self.find_change_samples(attr, labels)
 
         og_ent = self.entropy_of(sorted_label)
         best_gr = 0.0
@@ -400,3 +389,21 @@ class ID3(object):
         if counts[0] > counts[1]:
             return keys[0]
         return keys[1]
+
+    def find_change_samples(self, attr, labels):
+        """
+        sort the attribute-label pairs according to attribute values in ascending order;
+        find the indexs where the labels changes.
+        :param attr: array-like, continuous
+        :param labels: array-like
+        :return: sorted attributes, sorted, labels, change indexs
+        """
+        cont_xy_pair = np.array([attr, labels]).T
+        # Sort the attribute label ascendingly
+        sorted_xy_pair = cont_xy_pair[cont_xy_pair[:, 0].argsort(kind='mergesort')]
+        sorted_attr = sorted_xy_pair[:, 0]
+        sorted_label = sorted_xy_pair[:, 1]
+        # list of the indexes of samples where class label changed
+        changed_idx = np.where(sorted_xy_pair[:, 1] != np.roll(sorted_xy_pair[:, 1], 1))[0]
+
+        return sorted_attr, sorted_label, changed_idx
