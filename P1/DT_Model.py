@@ -184,15 +184,23 @@ class ID3(object):
         sorted_label = sorted_xy_pair[:, 1]
         # list of the indexes of samples where class label changed
         changed_idx = np.where(sorted_xy_pair[:, 1] != np.roll(sorted_xy_pair[:, 1], 1))[0]
+        og_ent = self.entropy_of(sorted_label)
         best_ig = 0.0
         for i in changed_idx[1:]:
-            part_val = (sorted_xy_pair[:, 0][i] + sorted_xy_pair[:, 0][i-1])/2
-            curr_ig = self.ig_cont(sorted_attr, part_val, sorted_label)
+            curr_ig = og_ent - self.entropy_cont_sorted(sorted_label, i)
+            part_val = (sorted_attr[i] + sorted_attr[i-1])/2
+
             # Finding the maximum information gain
             if best_ig <= curr_ig:
                 best_ig = curr_ig
                 best_partition = part_val
         return best_ig, best_partition
+
+    def entropy_cont_sorted(self, sorted_labels, part_idx):
+        length = len(sorted_labels)
+        prob_left = part_idx / float(length)
+        curr_ent = prob_left * self.entropy_of(sorted_labels[0:part_idx]) + (1 - prob_left) * self.entropy_of(sorted_labels[part_idx:length])
+        return curr_ent
 
     def ig_cont(self, attr, part_val, labels):
         """
