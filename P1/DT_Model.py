@@ -197,6 +197,13 @@ class ID3(object):
         return best_ig, best_partition
 
     def entropy_cont_sorted(self, sorted_labels, part_idx):
+        """
+        :param sorted_labels:  array-like
+            sorted according to the continuous attribute under consideration
+        :param part_idx:  integer index
+            partion the labels between index i-1 and index i
+        :return:
+        """
         length = len(sorted_labels)
         prob_left = part_idx / float(length)
         curr_ent = prob_left * self.entropy_of(sorted_labels[0:part_idx]) + (1 - prob_left) * self.entropy_of(sorted_labels[part_idx:length])
