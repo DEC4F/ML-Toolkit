@@ -21,17 +21,18 @@ def main():
     # parse args
     [use_full_sample, n_bins, m_estimate] = [int(use_full_sample), int(n_bins), int(m_estimate)]
     examples = get_dataset(file_path)
-    n_b = NaiveBayes(n_bins, m_estimate)
+    params = [n_bins, m_estimate]
     if use_full_sample:
         samples = examples[:, 1:-1]
         labels = examples[:, -1]
+        n_b = NaiveBayes(*params)
         n_b.fit(samples, labels)
     else:
-        avg_vals, std, area_under_roc = k_fold_cv(n_b, examples, K_FOLD)
-        print (("Accuracy: %.3f %.3f " + os.linesep + 
-                "Precision: %.3f %.3f " + os.linesep + 
+        avg_vals, std, area_under_roc = k_fold_cv('nbayes', params, examples, K_FOLD)
+        print (("Accuracy: %.3f %.3f " + os.linesep +
+                "Precision: %.3f %.3f " + os.linesep +
                 "Recall: %.3f %.3f" + os.linesep +
-                "Area under ROC: %.3f") % (avg_vals[0], std[0], avg_vals[1], std[1], avg_vals[2], std[2]), area_under_roc)
+                "Area under ROC: %.3f") % (avg_vals[0], std[0], avg_vals[1], std[1], avg_vals[2], std[2], area_under_roc))
 
 def get_dataset(file_path):
     """

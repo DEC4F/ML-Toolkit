@@ -24,15 +24,16 @@ def main():
     """
     file_path, use_full_sample, lr, num_iter, _lambda = sys.argv[1:6]
     # parse args
-    [use_full_sample, num_iter,lr,_lambda] = [int(use_full_sample), int(num_iter), float(lr), float(_lambda)]
-    clf = LogisticRegression(lr, num_iter, _lambda)
+    [use_full_sample, num_iter, lr,_lambda] = [int(use_full_sample), int(num_iter), float(lr), float(_lambda)]
     examples = get_dataset(file_path)
+    params = [lr, num_iter, _lambda]
     if use_full_sample:
         samples = examples[:, 1:-1]
         labels = examples[:, -1]
+        clf = LogisticRegression(*params)
         clf.fit(samples, labels)
     else:
-        avg_vals, std, area_under_roc = k_fold_cv(clf, examples, K_FOLD)
+        avg_vals, std, area_under_roc = k_fold_cv('logreg', params, examples, K_FOLD)
         print (("Accuracy: %.3f %.3f " + os.linesep +
                 "Precision: %.3f %.3f " + os.linesep +
                 "Recall: %.3f %.3f" + os.linesep +

@@ -5,6 +5,8 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
 import numpy as np
+from NB_Model import NaiveBayes
+from LR_Model import LogisticRegression
 
 def precision(y_true, y_pred):
     """
@@ -65,7 +67,7 @@ def specificity(y_true, y_pred):
 
     return sum([i == j for i,j in zip(y_true,y_pred) if i==False]) / float(y_true.count(0))
 
-def k_fold_cv(model, data, k):
+def k_fold_cv(algo, algo_param, data, k):
     """
     perform k fold cross validation on the model
     ----------
@@ -76,6 +78,9 @@ def k_fold_cv(model, data, k):
     k : int
           the parameter in cross validation determing how many fold we're doing
     """
+    if not ('nbayes' in algo or 'logreg' in algo):
+        raise Exception ("INPUT_ALGORITHM_UNAVAILABLE")
+
     data_split = np.array_split(data, k)
     acc = []
     prcisn = []
@@ -88,6 +93,11 @@ def k_fold_cv(model, data, k):
     np.random.shuffle(data)
 
     for i in range(0, k):
+        if algo == 'nbayes':
+            model = NaiveBayes(*algo_param)
+        else:
+            model = LogisticRegression(*algo_param)
+
         train_data = np.delete(data_split, (i), axis=0)
         train_data = np.concatenate(train_data)
         test_data = data_split[i]
