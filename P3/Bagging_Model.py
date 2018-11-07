@@ -18,7 +18,7 @@ class Bagging(object):
     def ensemble_fit(self, samples, labels):
         """
         Build a Bagging ensemble of classifier from the training
-           set (X, y) using boostrap
+           set (X, y) using bootstrap
         Parameters
         ----------
         X : {array-like, sparse matrix} of shape = [n_samples, n_features]
@@ -54,16 +54,16 @@ class Bagging(object):
         
 
     def random_samples(self,samples,labels, ratio=1.0):
-    """
-    Generates and returns a randomised sample dataset same
-    as the size of the initial one and 
-    with replacemnet
-    """
-    rand_sample = list()
-    rand_label = list()
-    n_sample = round(len(samples) * ratio)
-    while len(rand_sample) < n_sample:
-        index = randrange(len(rand_sample))
-        rand_sample.append(samples[index])
-        rand_label.append(labels[index])
-    return np.array(rand_sample),np.array(rand_label)
+        """
+        Generates and returns a randomised sample dataset same
+        as the size of the initial one and
+        with replacemnet
+        """
+        rand_sample = list()
+        rand_label = list()
+        n_sample = round(len(samples) * ratio)
+        while len(rand_sample) < n_sample:
+            index = randrange(len(rand_sample))
+            rand_sample.append(samples[index])
+            rand_label.append(labels[index])
+        return np.array(rand_sample), np.array(rand_label)
