@@ -31,9 +31,12 @@ class AdaBoosting(object):
         sample_weight : array-like, shape = [n_samples] or None
             Sample weights. If None, then samples are equally weighted
         """
-        # Initialize weights to 1/N
-        N = labels.shape[0]
-        weights = np.ones(N) / N
+        # Initialize weights
+        if sample_weight is None:
+            N = labels.shape[0]
+            weights = np.ones(N) / N
+        else:
+            weights = sample_weight
 
         for i in range(self.n_iter):
             # Train a base classifier and then classify the training data.
