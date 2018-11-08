@@ -4,6 +4,7 @@ This is an implementation of bagging algorithm
 Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
+from random import randrange
 import numpy as np
 
 class Bagging(object):
@@ -27,9 +28,8 @@ class Bagging(object):
         y : array-like, shape = [n_samples]
             The target values
         """
-        
-        for i in self.n_iters:
-            new_samples , new_targets = self.random_sample(samples,labels)
+        for i in range(self.n_iter):
+            new_samples , new_targets = self.random_samples(samples,labels)
             self.classifiers[i].fit(new_samples, new_targets)
 
     def ensemble_predict(self, sample):
@@ -51,16 +51,15 @@ class Bagging(object):
                 pred.append(bool(cla.predict(sample[j, :])))
             predictions.append(sum(pred)/len(pred) >= 0.5)
         return predictions
-        
 
-    def random_samples(self,samples,labels, ratio=1.0):
+    def random_samples(self, samples, labels, ratio=1.0):
         """
         Generates and returns a randomised sample dataset same
         as the size of the initial one and
         with replacemnet
         """
-        rand_sample = list()
-        rand_label = list()
+        rand_sample = []
+        rand_label = []
         n_sample = round(len(samples) * ratio)
         while len(rand_sample) < n_sample:
             index = randrange(len(rand_sample))
