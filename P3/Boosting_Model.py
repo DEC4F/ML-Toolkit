@@ -20,13 +20,13 @@ class AdaBoosting(object):
     def ensemble_fit(self, samples, labels, sample_weight=None):
         """
         Build a Bagging ensemble of classifier from the training
-           set (X, y)
+           set (samples, labels)
         Parameters
         ----------
-        X : {array-like, sparse matrix} of shape = [n_samples, n_features]
+        samples : {array-like, sparse matrix} of shape = [n_samples, n_features]
             The training input samples. Sparse matrices are accepted only if
             they are supported by the base estimator.
-        y : array-like, shape = [n_samples]
+        labels : array-like, shape = [n_samples]
             The target values
         sample_weight : array-like, shape = [n_samples] or None
             Sample weights. If None, then samples are equally weighted
@@ -44,7 +44,7 @@ class AdaBoosting(object):
             # alpha, the weight of this classifier in the vote.
             epsilon = np.sum(weights[predictions != labels])
             alpha = 0.5 * np.log((1 - epsilon) / epsilon)
-            if epsilon = 0 or epsilon ≥ 0.5:
+            if epsilon == 0 or epsilon >= 0.5:
                 break
             # Store the classifiers weights.
             self.cls_weights.append(alpha)
