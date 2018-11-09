@@ -303,10 +303,16 @@ class ID3(object):
         sample_weights : array-like
             list of weights imposed onto labels
         """
-        # [true_idx, false_idx]
-        weight_idx = [np.where(labels), np.where(np.logical_not(labels))]
+        true_idx = np.where(labels)
+        false_idx = np.where(np.logical_not(labels))
+        # [false_total_weights, true_total_weights]
+        weights = list()
+        w_candidate = [sum(sample_weights[false_idx]), sum(sample_weights[true_idx])]
+        for _w in w_candidate:
+            if _w != 0:
+                weights.append(_w)
         # sum of weights corresponding to yi / total weights
-        prob = [sum(sample_weights[idx]) / float(sum(sample_weights)) for idx in weight_idx]
+        prob = [w / float(np.sum(weights)) for w in weights]
         return -np.sum([x*np.log2(x) for x in prob])
 
     def entropy_of_discrete(self, attr, symbol, sample_weights):
