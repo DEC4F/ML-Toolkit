@@ -14,7 +14,7 @@ from NB_Model import NaiveBayes
 from evaluation_lib import k_fold_cv
 
 K_FOLD = 5
-ID3_Config = [1, False] # depth = 1, not use_gain_ratio = False
+ID3_Config = [1, False] # depth = 1, use_gain_ratio = False
 NB_Config = [5, 3] # n_bins = 5, m_estimate = 3
 LR_Config = [0.01, 100, 0.1] # learning_rate = 0.01, n_iter = 100, lambda=0.1)
 
@@ -27,7 +27,18 @@ def main():
     # parse args
     [use_full_sample, n_iter] = [int(use_full_sample), int(n_iter)]
     examples = get_dataset(file_path)
-    a_d = AdaBoosting(parse_learning_algo(learning_algo), n_iter)
+    param = [parse_learning_algo(learning_algo), n_iter]
+    if use_full_sample:
+        samples = examples[:, 1:-1]
+        targets = examples[:, -1]
+        a_d = AdaBoosting(*param)
+        a_d.ensemble_fit(samples, targets)
+    else:
+        avg_vals, std, area_under_roc = k_fold_cv('boost', param, examples, K_FOLD)
+        print (("Accuracy: %.3f %.3f " + os.linesep +
+                "Precision: %.3f %.3f " + os.linesep +
+                "Recall: %.3f %.3f" + os.linesep +
+                "Area under ROC: %.3f") % (avg_vals[0], std[0], avg_vals[1], std[1], avg_vals[2], std[2], area_under_roc))
 
 def get_dataset(file_path):
     """
@@ -48,7 +59,7 @@ def parse_learning_algo(lr):
     """
     models = ['dtree', 'nbayes', 'logreg']
     if lr not in models:
-        raise ValueError("Error Code: INPUT ALGORITHM UNAVAILABLE")
+        raise IOError("Error Code: INPUT_ALGORITHM_UNAVAILABLE")
     if lr == models[0]:
         return ID3(*ID3_Config)
     elif lr == models[1]:

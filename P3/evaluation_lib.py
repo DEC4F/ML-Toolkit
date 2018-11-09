@@ -5,8 +5,8 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 """
 
 import numpy as np
-from NB_Model import NaiveBayes
-from LR_Model import LogisticRegression
+from Boosting_Model import AdaBoosting
+from Bagging_Model import Bagging
 
 def precision(y_true, y_pred):
     """
@@ -78,8 +78,8 @@ def k_fold_cv(algo, algo_param, data, k):
     k : int
           the parameter in cross validation determing how many fold we're doing
     """
-    if not ('nbayes' in algo or 'logreg' in algo):
-        raise Exception ("INPUT_ALGORITHM_UNAVAILABLE")
+    if not ('boost' in algo or 'bag' in algo):
+            raise Exception("Error Code: CROSS_VALIDATION_ON_UNAVAILABLE_ALGO")
 
     data_split = np.array_split(data, k)
     acc = []
@@ -93,10 +93,10 @@ def k_fold_cv(algo, algo_param, data, k):
     np.random.shuffle(data)
 
     for i in range(0, k):
-        if algo == 'nbayes':
-            model = NaiveBayes(*algo_param)
-        else:
-            model = LogisticRegression(*algo_param)
+        if 'boost' in algo:
+            model = AdaBoosting(*algo_param)
+        elif 'bag' in algo:
+            model = Bagging(*algo_param)
 
         train_data = np.delete(data_split, (i), axis=0)
         train_data = np.concatenate(train_data)
@@ -106,9 +106,9 @@ def k_fold_cv(algo, algo_param, data, k):
         test_samples = test_data[:, 1:-1]
         test_targets = [bool(x) for x in test_data[:, -1]]
 
-        model.fit(train_samples, train_targets)
+        model.ensemble_fit(train_samples, train_targets)
 
-        result = np.array([model.predict(test_samples[j, :]) for j in range(test_samples.shape[0])])
+        result = np.array([model.ensemble_predict(test_samples[j, :]) for j in range(test_samples.shape[0])])
         pred = result[:, 0]
         # [confidence, true_labels]
         new_pair = np.array([result[:, 1], test_targets]).T

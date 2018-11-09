@@ -27,7 +27,18 @@ def main():
     # parse args
     [use_full_sample, n_iter] = [int(use_full_sample), int(n_iter)]
     examples = get_dataset(file_path)
-    bagg = Bagging(parse_learning_algo(learning_algo), n_iter)
+    param = [parse_learning_algo(learning_algo), n_iter]
+    if use_full_sample:
+        samples = examples[:, 1:-1]
+        targets = examples[:, -1]
+        bagg = Bagging(*param)
+        bagg.ensemble_fit(samples, targets)
+    else:
+        avg_vals, std, area_under_roc = k_fold_cv('bag', param, examples, K_FOLD)
+        print (("Accuracy: %.3f %.3f " + os.linesep +
+                "Precision: %.3f %.3f " + os.linesep +
+                "Recall: %.3f %.3f" + os.linesep +
+                "Area under ROC: %.3f") % (avg_vals[0], std[0], avg_vals[1], std[1], avg_vals[2], std[2], area_under_roc))
 
 def get_dataset(file_path):
     """

@@ -17,7 +17,7 @@ class AdaBoosting(object):
         self.classifiers = [base_classifier] * n_iter
         self.cls_weights = []
 
-    def ensemble_fit(self, samples, labels, sample_weight=None):
+    def ensemble_fit(self, samples, labels, init_sample_weight=None):
         """
         Build a Bagging ensemble of classifier from the training
            set (samples, labels)
@@ -32,15 +32,14 @@ class AdaBoosting(object):
             Sample weights. If None, then samples are equally weighted
         """
         # Initialize weights
-        if sample_weight is None:
+        if init_sample_weight is None:
             N = labels.shape[0]
             weights = np.ones(N) / N
         else:
-            weights = sample_weight
+            weights = init_sample_weight
 
         for i in range(self.n_iter):
             # Train a base classifier and then classify the training data.
-            #TODO: making learners weights data compatible
             self.classifiers[i].fit(samples, labels, weights)
             predictions = np.array([self.classifiers[i].predict(_x) for _x in samples])
             # Epsilon is the weighted training error.  Use it to calculate
