@@ -6,7 +6,7 @@ Author: Stan Tian, Yimin Chen, Devansh Gupta
 
 import numpy as np
 
-class NaiveBayes(object):
+class Weighted_NaiveBayes(object):
     """
     a naive bayes model
     """
@@ -27,7 +27,7 @@ class NaiveBayes(object):
         self.prob_dict[True] = {}
         self.prob_dict[False] = {}
 
-    def fit(self, samples, labels):
+    def fit(self, samples, labels, sample_weight):
         """
         build a naive bayes network with input samples and labels
         ----------
@@ -42,8 +42,8 @@ class NaiveBayes(object):
                 attr = np.digitize(attr.astype(np.float64), self.bins[attr_idx])
             else:
                 self.bins[attr_idx] = list(np.unique(attr))
-            al_pair = np.array([attr, labels]).T
-            probs = self.likelihood(al_pair, len(self.bins[attr_idx]))
+            alw_matrix = np.array([attr, labels, sample_weight]).T
+            probs = self.likelihood(alw_matrix, len(self.bins[attr_idx]))
             self.prob_dict[True][attr_idx] = probs[:, 0]
             self.prob_dict[False][attr_idx] = probs[:, 1]
         self.p_true = sum(labels) / float(len(labels))
@@ -91,7 +91,7 @@ class NaiveBayes(object):
                 if val >= curr_val and val < sorted_bin[i+1]:
                     return i + 1
 
-    def likelihood(self, al_pair, _v):
+    def likelihood(self, alw_matrix, _v):
         """
         calculates the likelihood of attribute taking on a unique value given its label
         ----------
@@ -111,20 +111,21 @@ class NaiveBayes(object):
             self.prior_e = self.p_true
         # unique value and its corresponding conditional probability
         lh_array = np.zeros((_v, 2))
-        for idx, uniq_val in enumerate(np.unique(al_pair[:, 0])):
-            lh_array[idx, 0] = self.compute_lh(al_pair[al_pair[:, 1] == True], uniq_val, self.prior_e)
-            lh_array[idx, 1] = self.compute_lh(al_pair[al_pair[:, 1] == False], uniq_val, 1 - self.prior_e)
+        for idx, uniq_val in enumerate(np.unique(alw_matrix[:, 0])):
+            lh_array[idx, 0] = self.compute_lh(alw_matrix[alw_matrix[:, 1] == True], uniq_val, self.prior_e)
+            lh_array[idx, 1] = self.compute_lh(alw_matrix[alw_matrix[:, 1] == False], uniq_val, 1 - self.prior_e)
         return lh_array
 
-    def compute_lh(self, al_pure_pair, x_i, p):
+    def compute_lh(self, alw_pure_matrix, x_i, p):
         """
         computes the likelihood of attribute taking on xi as value given its label
         ----------
         al_pair : array-like
             the attribute and label pair
         """
-        # (number of examples with Xi = xi and Y = y) + mp
-        numerator = len(al_pure_pair[al_pure_pair[:, 0] == x_i]) + self.m_val * p
-        # (number of examples with Y = y) + m
-        denominator = len(al_pure_pair) + self.m_val
+        # sum of weights (that Xi = xi and Y = y) + mp
+        w_sum = sum(alw_pure_matrix[alw_pure_matrix[:, 0] == x_i][:, 2])
+        numerator = w_sum + self.m_val * p
+        # sum of weights (that Y = y) + m
+        denominator = sum(alw_pure_matrix[:, 2]) + self.m_val
         return numerator / float(denominator)

@@ -8,9 +8,9 @@ import os
 import numpy as np
 import mldata
 from Boosting_Model import AdaBoosting
-from DT_Model import ID3
-from LR_Model import LogisticRegression
-from NB_Model import NaiveBayes
+from Weighted_DT_Model import Weighted_ID3
+from Weighted_LR_Model import Weighted_LogisticRegression
+from Weighted_NB_Model import Weighted_NaiveBayes
 from evaluation_lib import k_fold_cv
 
 K_FOLD = 5
@@ -61,11 +61,11 @@ def parse_learning_algo(lr):
     if lr not in models:
         raise IOError("Error Code: INPUT_ALGORITHM_UNAVAILABLE")
     if lr == models[0]:
-        return ID3(*ID3_Config)
+        return Weighted_ID3(*ID3_Config)
     elif lr == models[1]:
-        return NaiveBayes(*NB_Config)
+        return Weighted_NaiveBayes(*NB_Config)
     elif lr == models[2]:
-        return LogisticRegression(*LR_Config)
+        return Weighted_LogisticRegression(*LR_Config)
     else:
         raise Exception("Error Code: UNKNOWN_IO_ERROR")
 

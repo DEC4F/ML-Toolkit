@@ -29,7 +29,7 @@ class Bagging(object):
             The target values
         """
         for i in range(self.n_iter):
-            new_samples , new_targets = self.random_samples(samples,labels)
+            new_samples, new_targets = self.random_samples(samples,labels)
             self.classifiers[i].fit(new_samples, new_targets)
 
     def ensemble_predict(self, sample):

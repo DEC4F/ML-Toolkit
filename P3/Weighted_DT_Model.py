@@ -10,7 +10,7 @@ import numpy as np
 REMOVE_ATTRIBUTE = True
 IG_THRESHOLD = 0.0
 
-class ID3(object):
+class Weighted_ID3(object):
     """
     a ID3 decision tree
     """
@@ -18,6 +18,7 @@ class ID3(object):
     def __init__(self, curr_depth, use_gain_ratio):
         self.curr_depth = curr_depth
         self.use_gain_ratio = use_gain_ratio
+        self.sample_weights = None
         # create 2 ID3 branches
         self.pos_branch = None
         self.neg_branch = None
@@ -25,9 +26,8 @@ class ID3(object):
         self.part_val = None
         self.max_depth = 1
         self.size = 1
-        self.feature = None
 
-    def fit(self, samples, labels):
+    def fit(self, samples, labels, sample_weights):
         """
         build a id3 decision tree with input samples and labels
         ---------
@@ -36,14 +36,16 @@ class ID3(object):
         labels : array-like
             the labels
         """
-        # no labels:
-        if len(labels) == 0:
+        self.sample_weights = sample_weights
+
+        # no label in list:
+        if not labels.any():
             self.attr_idx = -1
             self.max_depth = 0
             return
 
         # base case: max depth reached / pure node / run out of attributes
-        if self.curr_depth == 0 or self.entropy_of(labels) == 0 or np.size(samples, 1) == 0:
+        if self.curr_depth == 0 or self.entropy_of(labels, self.sample_weights) == 0 or np.size(samples, 1) == 0:
             # create a leaf node with major label, id=-1 indicates leaf node
             self.attr_idx = -1
             self.max_depth = 0
@@ -60,15 +62,15 @@ class ID3(object):
             return
 
         # partition the samples and labels
-        pos_subs, neg_subs, pos_labels, neg_labels = self.partition(samples, labels, self.attr_idx, self.part_val)
+        pos_subs, neg_subs, pos_labels, neg_labels, pos_weights, neg_weights = self.partition(samples, labels, self.attr_idx, self.part_val, self.sample_weights)
 
         # init two branches
-        self.pos_branch = ID3(self.curr_depth - 1, self.use_gain_ratio)
-        self.neg_branch = ID3(self.curr_depth - 1, self.use_gain_ratio)
+        self.pos_branch = Weighted_ID3(self.curr_depth - 1, self.use_gain_ratio)
+        self.neg_branch = Weighted_ID3(self.curr_depth - 1, self.use_gain_ratio)
 
         # recursively build tree
-        self.pos_branch.fit(pos_subs, pos_labels)
-        self.neg_branch.fit(neg_subs, neg_labels)
+        self.pos_branch.fit(pos_subs, pos_labels, pos_weights)
+        self.neg_branch.fit(neg_subs, neg_labels, neg_weights)
 
         self.size += self.pos_branch.size + self.neg_branch.size
         self.max_depth += max(self.pos_branch.max_depth, self.neg_branch.max_depth)
@@ -161,7 +163,7 @@ class ID3(object):
         labels : array-like
             the class label column
         """
-        og_ent = self.entropy_of(labels)
+        og_ent = self.entropy_of(labels, self.sample_weights)
         xy_pair = np.array([attr, labels]).T
 
         sym = xy_pair[xy_pair[:, 0] == symbol]
@@ -169,7 +171,7 @@ class ID3(object):
         # calculate probability of current symbol
         p_sym = len(sym) / float(len(xy_pair))
         # calculate entropy of entire attribute using current symbol
-        curr_ent = self.entropy_of(sym[:, 1]) * p_sym + self.entropy_of(non_sym[:, 1]) * (1 - p_sym)
+        curr_ent = self.entropy_of(sym[:, 1], self.sample_weights) * p_sym + self.entropy_of(non_sym[:, 1], self.sample_weights) * (1 - p_sym)
         curr_ig = og_ent - curr_ent
 
         return curr_ig
@@ -185,7 +187,7 @@ class ID3(object):
         """
         sorted_attr, sorted_label, changed_idx = self.find_change_samples(attr, labels)
 
-        og_ent = self.entropy_of(sorted_label)
+        og_ent = self.entropy_of(sorted_label, self.sample_weights)
         best_ig = 0.0
         for i in changed_idx[1:]:
             curr_ig = og_ent - self.entropy_cont_part(sorted_label, i)
@@ -206,7 +208,7 @@ class ID3(object):
         """
         length = len(sorted_labels)
         prob_left = part_idx / float(length)
-        curr_ent = prob_left * self.entropy_of(sorted_labels[0:part_idx]) + (1 - prob_left) * self.entropy_of(sorted_labels[part_idx:length])
+        curr_ent = prob_left * self.entropy_of(sorted_labels[0:part_idx], self.sample_weights) + (1 - prob_left) * self.entropy_of(sorted_labels[part_idx:length], self.sample_weights)
         return curr_ent
 
     def find_change_samples(self, attr, labels):
@@ -255,7 +257,7 @@ class ID3(object):
         best_gr = 0.0
         for symbol in unique_symbol:
             curr_ig = self.ig_discrete(attr, symbol, labels)
-            curr_entrp = self.entropy_of_discrete(attr, symbol)
+            curr_entrp = self.entropy_of_discrete(attr, symbol, self.sample_weights)
             if curr_entrp == 0:
                 curr_gr = 0.0
             else:
@@ -276,12 +278,12 @@ class ID3(object):
         """
         sorted_attr, sorted_label, changed_idx = self.find_change_samples(attr, labels)
 
-        og_ent = self.entropy_of(sorted_label)
+        og_ent = self.entropy_of(sorted_label, self.sample_weights)
         best_gr = 0.0
         for i in changed_idx[1:]:
             part_val = (sorted_attr[i] + sorted_attr[i - 1]) / 2
             curr_ig = og_ent - self.entropy_cont_part(sorted_label, i)
-            curr_entrp = self.entropy_of_cont(sorted_attr, part_val)
+            curr_entrp = self.entropy_of_cont(sorted_attr, part_val, self.sample_weights)
             if curr_entrp == 0:
                 curr_gr = 0.0
             else:
@@ -292,18 +294,28 @@ class ID3(object):
                 best_partition = part_val
         return best_gr, best_partition
 
-    def entropy_of(self, labels):
+    def entropy_of(self, labels, sample_weights):
         """
         calculates entropy of input labels
         ----------
         labels : array-like
             a list of labels
+        sample_weights : array-like
+            list of weights imposed onto labels
         """
-        occurence = list(Counter(labels).values())
-        prob = [x/float(np.sum(occurence)) for x in occurence]
+        true_idx = np.where(labels)
+        false_idx = np.where(np.logical_not(labels))
+        # [false_total_weights, true_total_weights]
+        weights = list()
+        w_candidate = [sum(sample_weights[false_idx]), sum(sample_weights[true_idx])]
+        for _w in w_candidate:
+            if _w != 0:
+                weights.append(_w)
+        # sum of weights corresponding to yi / total weights
+        prob = [w / float(np.sum(weights)) for w in weights]
         return -np.sum([x*np.log2(x) for x in prob])
 
-    def entropy_of_discrete(self, attr, symbol):
+    def entropy_of_discrete(self, attr, symbol, sample_weights):
         """
         calculates the entropy of choosing the input symbol in a discrete attribute
         ----------
@@ -311,15 +323,17 @@ class ID3(object):
             the attribute column
         symbol : object
             a value in the discrete attribute
+        sample_weights : array-like
+            list of weights imposed onto labels
         """
-        sym = attr[attr[:] == symbol]
-        p_sym = len(sym)/float(len(attr))
+        sym_idx = np.where(attr[:] == symbol)
+        p_sym = sum(sample_weights[sym_idx]) / float(sum(sample_weights))
         if p_sym == 1 or p_sym == 0:
             return 0
         entropy = -p_sym*np.log2(p_sym) - (1-p_sym)*np.log2(1-p_sym)
         return entropy
 
-    def entropy_of_cont(self, attr, part_val):
+    def entropy_of_cont(self, attr, part_val, sample_weights):
         """
         calculates the entropy of choosing the input symbol in a continuous attribute
         ----------
@@ -328,14 +342,14 @@ class ID3(object):
         part_val : float
             the value we partition the data by
         """
-        positive = attr[attr[:] <= part_val]
-        p_positive = len(positive)/float(len(attr))
+        pos_idx = np.where(attr[:] <= part_val)
+        p_positive = sum(sample_weights[pos_idx]) / float(sum(sample_weights))
         if p_positive == 1 or p_positive == 0:
             return 0
         entropy = -p_positive * np.log2(p_positive) - (1 - p_positive) * np.log2(1 - p_positive)
         return entropy
 
-    def partition(self, samples, labels, attr_idx, part_value):
+    def partition(self, samples, labels, attr_idx, part_value, sample_weights):
         """
         partitions the samples and labels by input attribute and partition value
         ----------
@@ -360,12 +374,14 @@ class ID3(object):
         neg_subs = np.delete(samples, index, axis=0)
         pos_labels = labels[index]
         neg_labels = np.delete(labels, index, axis=0)
+        pos_weights = sample_weights[index]
+        neg_weights = np.delete(sample_weights, index, axis=0)
         # remove attribute
         if REMOVE_ATTRIBUTE:
             pos_subs = np.delete(pos_subs, attr_idx, axis=1)
             neg_subs = np.delete(neg_subs, attr_idx, axis=1)
 
-        return pos_subs, neg_subs, pos_labels, neg_labels
+        return pos_subs, neg_subs, pos_labels, neg_labels, pos_weights, neg_weights
 
     def major_label(self, labels):
         """
